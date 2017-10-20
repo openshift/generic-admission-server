@@ -5,6 +5,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	apirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 type AdmissionHookFunc func(admissionSpec admissionv1alpha1.AdmissionReviewSpec) admissionv1alpha1.AdmissionReviewStatus
@@ -14,6 +15,7 @@ type REST struct {
 }
 
 var _ rest.Creater = &REST{}
+var _ rest.GroupVersionKindProvider = &REST{}
 
 func NewREST(hookFn AdmissionHookFunc) *REST {
 	return &REST{
@@ -24,6 +26,11 @@ func NewREST(hookFn AdmissionHookFunc) *REST {
 func (r *REST) New() runtime.Object {
 	return &admissionv1alpha1.AdmissionReview{}
 }
+
+func (r *REST) GroupVersionKind() schema.GroupVersionKind {
+	return admissionv1alpha1.SchemeGroupVersion.WithKind("AdmissionReview")
+}
+
 
 func (r *REST) Create(ctx apirequest.Context, obj runtime.Object, _ bool) (runtime.Object, error) {
 	admissionReview := obj.(*admissionv1alpha1.AdmissionReview)
