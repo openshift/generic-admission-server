@@ -7,7 +7,7 @@ import (
 
 	"github.com/golang/glog"
 
-	admissionv1alpha1 "k8s.io/api/admission/v1alpha1"
+	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/apiserver/pkg/util/logs"
@@ -25,7 +25,7 @@ type AdmissionHook interface {
 	Resource() (plural schema.GroupVersionResource, singular string)
 
 	// Admit is called to decide whether to accept the admission request.
-	Admit(admissionSpec admissionv1alpha1.AdmissionReviewSpec) admissionv1alpha1.AdmissionReviewStatus
+	Validate(admissionSpec *admissionv1beta1.AdmissionRequest) *admissionv1beta1.AdmissionResponse
 
 	// Initialize is called as a post-start hook
 	Initialize(kubeClientConfig *rest.Config, stopCh <-chan struct{}) error

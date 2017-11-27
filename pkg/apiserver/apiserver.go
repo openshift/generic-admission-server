@@ -3,7 +3,7 @@ package apiserver
 import (
 	"fmt"
 
-	admissionv1alpha1 "k8s.io/api/admission/v1alpha1"
+	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apimachinery"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,15 +27,15 @@ type AdmissionHook interface {
 	// Resource is the resource to use for hosting your admission webhook
 	Resource() (plural schema.GroupVersionResource, singular string)
 
-	// Admit is called to decide whether to accept the admission request.
-	Admit(admissionSpec admissionv1alpha1.AdmissionReviewSpec) admissionv1alpha1.AdmissionReviewStatus
+	// Validate is called to decide whether to accept the admission request.
+	Validate(admissionSpec *admissionv1beta1.AdmissionRequest) *admissionv1beta1.AdmissionResponse
 
 	// Initialize is called as a post-start hook
 	Initialize(kubeClientConfig *restclient.Config, stopCh <-chan struct{}) error
 }
 
 func init() {
-	admissionv1alpha1.AddToScheme(Scheme)
+	admissionv1beta1.AddToScheme(Scheme)
 
 	// we need to add the options to empty v1
 	// TODO fix the server code to avoid this
@@ -114,12 +114,12 @@ func (c completedConfig) New() (*NamespaceReservationServer, error) {
 			MetadataAccessor: accessor,
 		}
 		interfacesFor := func(version schema.GroupVersion) (*meta.VersionInterfaces, error) {
-			if version != admissionv1alpha1.SchemeGroupVersion {
+			if version != admissionv1beta1.SchemeGroupVersion {
 				return nil, fmt.Errorf("unexpected version %v", version)
 			}
 			return versionInterfaces, nil
 		}
-		restMapper := meta.NewDefaultRESTMapper([]schema.GroupVersion{admissionv1alpha1.SchemeGroupVersion}, interfacesFor)
+		restMapper := meta.NewDefaultRESTMapper([]schema.GroupVersion{admissionv1beta1.SchemeGroupVersion}, interfacesFor)
 		// TODO we're going to need a later k8s.io/apiserver so that we can get discovery to list a different group version for
 		// our endpoint which we'll use to back some custom storage which will consume the AdmissionReview type and give back the correct response
 		apiGroupInfo := genericapiserver.APIGroupInfo{
@@ -132,7 +132,7 @@ func (c completedConfig) New() (*NamespaceReservationServer, error) {
 				RESTMapper:    restMapper,
 				InterfacesFor: interfacesFor,
 				InterfacesByVersion: map[schema.GroupVersion]*meta.VersionInterfaces{
-					admissionv1alpha1.SchemeGroupVersion: versionInterfaces,
+					admissionv1beta1.SchemeGroupVersion: versionInterfaces,
 				},
 			},
 			VersionedResourcesStorageMap: map[string]map[string]rest.Storage{},
@@ -141,9 +141,6 @@ func (c completedConfig) New() (*NamespaceReservationServer, error) {
 			Scheme:                 Scheme,
 			ParameterCodec:         metav1.ParameterCodec,
 			NegotiatedSerializer:   Codecs,
-			SubresourceGroupVersionKind: map[string]schema.GroupVersionKind{
-				"namespacereservations": admissionv1alpha1.SchemeGroupVersion.WithKind("AdmissionReview"),
-			},
 		}
 
 		for _, admissionHooks := range versionMap {
@@ -153,7 +150,7 @@ func (c completedConfig) New() (*NamespaceReservationServer, error) {
 				admissionVersion := admissionResource.GroupVersion()
 
 				restMapper.AddSpecific(
-					admissionv1alpha1.SchemeGroupVersion.WithKind("AdmissionReview"),
+					admissionv1beta1.SchemeGroupVersion.WithKind("AdmissionReview"),
 					admissionResource,
 					admissionVersion.WithResource(singularResourceType),
 					meta.RESTScopeRoot)
@@ -161,7 +158,7 @@ func (c completedConfig) New() (*NamespaceReservationServer, error) {
 				// just overwrite the groupversion with a random one.  We don't really care or know.
 				apiGroupInfo.GroupMeta.GroupVersions = append(apiGroupInfo.GroupMeta.GroupVersions, admissionVersion)
 
-				admissionReview := admissionreview.NewREST(admissionHook.Admit)
+				admissionReview := admissionreview.NewREST(admissionHook.Validate)
 				v1alpha1storage := map[string]rest.Storage{
 					admissionResource.Resource: admissionReview,
 				}
