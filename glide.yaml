@@ -1,20 +1,14 @@
 package: github.com/openshift/generic-admission-server
 import:
-- package: k8s.io/gengo
-  version: master
 - package: k8s.io/code-generator
   version: master
+  repo: git@github.com:kubernetes-nightly/code-generator.git
 - package: k8s.io/client-go
-  version: master
+  repo: git@github.com:kubernetes-nightly/client-go.git
 - package: k8s.io/apimachinery
-  version: master
-- package: k8s.io/kube-openapi
-  version: master
+  repo: git@github.com:kubernetes-nightly/apimachinery.git
 - package: k8s.io/apiserver
   version: master
+  repo: git@github.com:kubernetes-nightly/apiserver.git
 - package: k8s.io/api
-  version: master
-- package: github.com/spf13/cobra
-  version: master
-- package: github.com/spf13/pflag
-  version: master
+  repo: git@github.com:kubernetes-nightly/api.git
