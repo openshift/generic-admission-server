@@ -7,29 +7,19 @@ import (
 
 	"github.com/golang/glog"
 
-	admissionv1beta1 "k8s.io/api/admission/v1beta1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/apiserver/pkg/util/logs"
-	"k8s.io/client-go/rest"
 
 	"github.com/openshift/generic-admission-server/pkg/apiserver"
 	"github.com/openshift/generic-admission-server/pkg/cmd/server"
 )
 
-// AdmissionHook is what callers provide.  We define it here to limit how much of the import tree
-// callers have to deal with for this plugin.  This means that callers need to match levels of
-// apimachinery, api, client-go, and apiserver.
-type AdmissionHook interface {
-	// Resource is the resource to use for hosting your admission webhook
-	Resource() (plural schema.GroupVersionResource, singular string)
-
-	// Admit is called to decide whether to accept the admission request.
-	Validate(admissionSpec *admissionv1beta1.AdmissionRequest) *admissionv1beta1.AdmissionResponse
-
-	// Initialize is called as a post-start hook
-	Initialize(kubeClientConfig *rest.Config, stopCh <-chan struct{}) error
-}
+// AdmissionHook is what callers provide, in the mutating, the validating variant or implementing even both interfaces.
+// We define it here to limit how much of the import tree callers have to deal with for this plugin. This means that
+// callers need to match levels of apimachinery, api, client-go, and apiserver.
+type AdmissionHook apiserver.AdmissionHook
+type ValidatingAdmissionHook apiserver.ValidatingAdmissionHook
+type MutatingAdmissionHook apiserver.MutatingAdmissionHook
 
 func RunAdmission(admissionHooks ...AdmissionHook) {
 	logs.InitLogs()

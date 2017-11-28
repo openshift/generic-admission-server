@@ -2,6 +2,7 @@ package apiserver
 
 import (
 	"fmt"
+	"strings"
 
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -24,14 +25,34 @@ var (
 )
 
 type AdmissionHook interface {
-	// Resource is the resource to use for hosting your admission webhook
-	Resource() (plural schema.GroupVersionResource, singular string)
-
-	// Validate is called to decide whether to accept the admission request.
-	Validate(admissionSpec *admissionv1beta1.AdmissionRequest) *admissionv1beta1.AdmissionResponse
-
 	// Initialize is called as a post-start hook
 	Initialize(kubeClientConfig *restclient.Config, stopCh <-chan struct{}) error
+}
+
+type ValidatingAdmissionHook interface {
+	AdmissionHook
+
+	// ValidatingResource is the resource to use for hosting your admission webhook. If the hook implements
+	// MutatingAdmissionHook as well, the two resources for validating and mutating admission must be different.
+	// Note: this is (usually) not the same as the payload resource!
+	ValidatingResource() (plural schema.GroupVersionResource, singular string)
+
+	// Validate is called to decide whether to accept the admission request. The returned AdmissionResponse
+	// must not use the Patch field.
+	Validate(admissionSpec *admissionv1beta1.AdmissionRequest) *admissionv1beta1.AdmissionResponse
+}
+
+type MutatingAdmissionHook interface {
+	AdmissionHook
+
+	// MutatingResource is the resource to use for hosting your admission webhook. If the hook implements
+	// ValidatingAdmissionHook as well, the two resources for validating and mutating admission must be different.
+	// Note: this is (usually) not the same as the payload resource!
+	MutatingResource() (plural schema.GroupVersionResource, singular string)
+
+	// Admit is called to decide whether to accept the admission request. The returned AdmissionResponse may
+	// use the Patch field to mutate the object from the passed AdmissionRequest.
+	Admit(admissionSpec *admissionv1beta1.AdmissionRequest) *admissionv1beta1.AdmissionResponse
 }
 
 func init() {
@@ -85,7 +106,7 @@ func (c *Config) Complete() CompletedConfig {
 
 	completedCfg.GenericConfig.Version = &version.Info{
 		Major: "1",
-		Minor: "0",
+		Minor: "1",
 	}
 
 	return CompletedConfig{&completedCfg}
@@ -158,18 +179,11 @@ func (c completedConfig) New() (*NamespaceReservationServer, error) {
 				// just overwrite the groupversion with a random one.  We don't really care or know.
 				apiGroupInfo.GroupMeta.GroupVersions = append(apiGroupInfo.GroupMeta.GroupVersions, admissionVersion)
 
-				admissionReview := admissionreview.NewREST(admissionHook.Validate)
+				admissionReview := admissionreview.NewREST(admissionHook.Admission)
 				v1alpha1storage := map[string]rest.Storage{
 					admissionResource.Resource: admissionReview,
 				}
 				apiGroupInfo.VersionedResourcesStorageMap[admissionVersion.Version] = v1alpha1storage
-
-				s.GenericAPIServer.AddPostStartHookOrDie(
-					fmt.Sprintf("%s.%s.%s-init", admissionResource.Resource, admissionResource.Version, admissionResource.Group),
-					func(context genericapiserver.PostStartHookContext) error {
-						return admissionHook.Initialize(inClusterConfig, context.StopCh)
-					},
-				)
 			}
 		}
 
@@ -181,23 +195,90 @@ func (c completedConfig) New() (*NamespaceReservationServer, error) {
 		}
 	}
 
+	for _, hook := range c.ExtraConfig.AdmissionHooks {
+		postStartName := postStartHookName(hook)
+		if len(postStartName) == 0 {
+			continue
+		}
+		s.GenericAPIServer.AddPostStartHookOrDie(postStartName,
+			func(context genericapiserver.PostStartHookContext) error {
+				return hook.Initialize(inClusterConfig, context.StopCh)
+			},
+		)
+	}
+
 	return s, nil
 }
 
-func admissionHooksByGroupThenVersion(admissionHooks ...AdmissionHook) map[string]map[string][]AdmissionHook {
-	ret := map[string]map[string][]AdmissionHook{}
+func postStartHookName(hook AdmissionHook) string {
+	ns := []string{}
+	if mutatingHook, ok := hook.(MutatingAdmissionHook); ok {
+		gvr, _ := mutatingHook.MutatingResource()
+		ns = append(ns, fmt.Sprintf("mutating-%s.%s.%s", gvr.Resource, gvr.Version, gvr.Group))
+	}
+	if validatingHook, ok := hook.(ValidatingAdmissionHook); ok {
+		gvr, _ := validatingHook.ValidatingResource()
+		ns = append(ns, fmt.Sprintf("validating-%s.%s.%s", gvr.Resource, gvr.Version, gvr.Group))
+	}
+	if len(ns) == 0 {
+		return ""
+	}
+	return strings.Join(append(ns, "init"), "-")
+}
+
+func admissionHooksByGroupThenVersion(admissionHooks ...AdmissionHook) map[string]map[string][]admissionHookWrapper {
+	ret := map[string]map[string][]admissionHookWrapper{}
 
 	for i := range admissionHooks {
-		gvr, _ := admissionHooks[i].Resource()
-
-		group, ok := ret[gvr.Group]
-		if !ok {
-			group = map[string][]AdmissionHook{}
-			ret[gvr.Group] = group
+		if mutatingHook, ok := admissionHooks[i].(MutatingAdmissionHook); ok {
+			gvr, _ := mutatingHook.MutatingResource()
+			group, ok := ret[gvr.Group]
+			if !ok {
+				group = map[string][]admissionHookWrapper{}
+				ret[gvr.Group] = group
+			}
+			group[gvr.Version] = append(group[gvr.Version], mutatingAdmissionHookWrapper{mutatingHook})
 		}
-
-		group[gvr.Version] = append(group[gvr.Version], admissionHooks[i])
+		if validatingHook, ok := admissionHooks[i].(ValidatingAdmissionHook); ok {
+			gvr, _ := validatingHook.ValidatingResource()
+			group, ok := ret[gvr.Group]
+			if !ok {
+				group = map[string][]admissionHookWrapper{}
+				ret[gvr.Group] = group
+			}
+			group[gvr.Version] = append(group[gvr.Version], validatingAdmissionHookWrapper{validatingHook})
+		}
 	}
 
 	return ret
+}
+
+// admissionHookWrapper wraps either a validating or mutating admission hooks, calling the respective resource and admission method.
+type admissionHookWrapper interface {
+	Resource() (plural schema.GroupVersionResource, singular string)
+	Admission(admissionSpec *admissionv1beta1.AdmissionRequest) *admissionv1beta1.AdmissionResponse
+}
+
+type mutatingAdmissionHookWrapper struct {
+	hook MutatingAdmissionHook
+}
+
+func (h mutatingAdmissionHookWrapper) Resource() (plural schema.GroupVersionResource, singular string) {
+	return h.hook.MutatingResource()
+}
+
+func (h mutatingAdmissionHookWrapper) Admission(admissionSpec *admissionv1beta1.AdmissionRequest) *admissionv1beta1.AdmissionResponse {
+	return h.hook.Admit(admissionSpec)
+}
+
+type validatingAdmissionHookWrapper struct {
+	hook ValidatingAdmissionHook
+}
+
+func (h validatingAdmissionHookWrapper) Resource() (plural schema.GroupVersionResource, singular string) {
+	return h.hook.ValidatingResource()
+}
+
+func (h validatingAdmissionHookWrapper) Admission(admissionSpec *admissionv1beta1.AdmissionRequest) *admissionv1beta1.AdmissionResponse {
+	return h.hook.Validate(admissionSpec)
 }
