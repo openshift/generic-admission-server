@@ -1,5 +1,5 @@
-hash: 67752627ba49f9ed9746c7572a68357e46809a335419ae69cfb7e49c96687cb0
-updated: 2017-10-17T14:40:28.719399875-04:00
+hash: aa82d7c9a9d30484d183f5f35926fe5b13dbb6f8376f4cfeb7ac13abdd7e41dd
+updated: 2017-11-27T17:05:35.927220789+01:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -110,13 +110,14 @@ imports:
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/protobuf
-  version: 4bd1920723d7b7c925de087aa32e2187708897f7
+  version: 1643683e1b54a9e88ad26d98f81400c8c9d9f4f9
   subpackages:
   - jsonpb
   - proto
   - ptypes
   - ptypes/any
   - ptypes/duration
+  - ptypes/struct
   - ptypes/timestamp
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
@@ -174,8 +175,6 @@ imports:
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/peterbourgon/diskv
   version: 5f041e8faa004a95c88a202771f4cc3e991971e6
-- name: github.com/pkg/errors
-  version: a22138067af1c4942683050411a841ade67fe1eb
 - name: github.com/prometheus/client_golang
   version: e7e903064f5e9eb5da98208bae10b475d4db0f8c
   subpackages:
@@ -199,9 +198,9 @@ imports:
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/spf13/cobra
-  version: 7b2c5ac9fc04fc5efafb60700713d4fa609b777b
+  version: f62e98d28ab7ad31d707ba837a966378465c7b57
 - name: github.com/spf13/pflag
-  version: 1f33b80956cde38911d1f23d764deb8d77a649ce
+  version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: github.com/ugorji/go
   version: ded73eae5db7e7a0ef6f55aace87a2873c5d2b74
   subpackages:
@@ -229,7 +228,7 @@ imports:
   - trace
   - websocket
 - name: golang.org/x/sys
-  version: 7ddbeae9ae08c6a06a59597f0c9edbc5ff2444ce
+  version: 95c6576299259db960f6c5b9b69ea52422860fce
   subpackages:
   - unix
   - windows
@@ -274,10 +273,13 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/api
-  version: 409c3b2393cd3359f275bd8b883b4d9c5aec41f6
+  version: ac5087b40572905448ac4a666f16804b8b34aa1e
+  repo: git@github.com:sttts/api.git
   subpackages:
   - admission/v1alpha1
+  - admission/v1beta1
   - admissionregistration/v1alpha1
+  - admissionregistration/v1beta1
   - apps/v1
   - apps/v1beta1
   - apps/v1beta2
@@ -292,6 +294,7 @@ imports:
   - batch/v2alpha1
   - certificates/v1beta1
   - core/v1
+  - events/v1beta1
   - extensions/v1beta1
   - networking/v1
   - policy/v1beta1
@@ -301,9 +304,11 @@ imports:
   - scheduling/v1alpha1
   - settings/v1alpha1
   - storage/v1
+  - storage/v1alpha1
   - storage/v1beta1
 - name: k8s.io/apimachinery
-  version: e9a29eff7d472df0f7da9ead5ab59b74e74a07ec
+  version: f5234182e36a4578670bd8f05d8b34c76ee14808
+  repo: git@github.com:sttts/apimachinery.git
   subpackages:
   - pkg/api/equality
   - pkg/api/errors
@@ -321,7 +326,6 @@ imports:
   - pkg/apis/meta/v1alpha1
   - pkg/conversion
   - pkg/conversion/queryparams
-  - pkg/conversion/unstructured
   - pkg/fields
   - pkg/labels
   - pkg/runtime
@@ -353,6 +357,7 @@ imports:
   - pkg/util/validation
   - pkg/util/validation/field
   - pkg/util/wait
+  - pkg/util/waitgroup
   - pkg/util/yaml
   - pkg/version
   - pkg/watch
@@ -360,13 +365,25 @@ imports:
   - third_party/forked/golang/netutil
   - third_party/forked/golang/reflect
 - name: k8s.io/apiserver
-  version: d299c880c4e33854f8c45bdd7ab599fb54cbe575
+  version: 49613d5298735c3fe65c27d39f9b789f1d688cce
+  repo: git@github.com:sttts/apiserver.git
   subpackages:
   - pkg/admission
   - pkg/admission/configuration
   - pkg/admission/initializer
+  - pkg/admission/metrics
   - pkg/admission/plugin/initialization
   - pkg/admission/plugin/namespace/lifecycle
+  - pkg/admission/plugin/webhook/config
+  - pkg/admission/plugin/webhook/config/apis/webhookadmission
+  - pkg/admission/plugin/webhook/config/apis/webhookadmission/v1alpha1
+  - pkg/admission/plugin/webhook/errors
+  - pkg/admission/plugin/webhook/mutating
+  - pkg/admission/plugin/webhook/namespace
+  - pkg/admission/plugin/webhook/request
+  - pkg/admission/plugin/webhook/rules
+  - pkg/admission/plugin/webhook/validating
+  - pkg/admission/plugin/webhook/versioned
   - pkg/apis/apiserver
   - pkg/apis/apiserver/install
   - pkg/apis/apiserver/v1alpha1
@@ -437,12 +454,14 @@ imports:
   - plugin/pkg/authenticator/token/webhook
   - plugin/pkg/authorizer/webhook
 - name: k8s.io/client-go
-  version: 076e344c86e52f088b78615f815b245f6d613537
+  version: d6e42d15f62d75771ccfcc2ea0ed67967f927942
+  repo: git@github.com:sttts/client-go.git
   subpackages:
   - discovery
   - informers
   - informers/admissionregistration
   - informers/admissionregistration/v1alpha1
+  - informers/admissionregistration/v1beta1
   - informers/apps
   - informers/apps/v1
   - informers/apps/v1beta1
@@ -458,6 +477,8 @@ imports:
   - informers/certificates/v1beta1
   - informers/core
   - informers/core/v1
+  - informers/events
+  - informers/events/v1beta1
   - informers/extensions
   - informers/extensions/v1beta1
   - informers/internalinterfaces
@@ -475,10 +496,12 @@ imports:
   - informers/settings/v1alpha1
   - informers/storage
   - informers/storage/v1
+  - informers/storage/v1alpha1
   - informers/storage/v1beta1
   - kubernetes
   - kubernetes/scheme
   - kubernetes/typed/admissionregistration/v1alpha1
+  - kubernetes/typed/admissionregistration/v1beta1
   - kubernetes/typed/apps/v1
   - kubernetes/typed/apps/v1beta1
   - kubernetes/typed/apps/v1beta2
@@ -493,6 +516,7 @@ imports:
   - kubernetes/typed/batch/v2alpha1
   - kubernetes/typed/certificates/v1beta1
   - kubernetes/typed/core/v1
+  - kubernetes/typed/events/v1beta1
   - kubernetes/typed/extensions/v1beta1
   - kubernetes/typed/networking/v1
   - kubernetes/typed/policy/v1beta1
@@ -502,8 +526,10 @@ imports:
   - kubernetes/typed/scheduling/v1alpha1
   - kubernetes/typed/settings/v1alpha1
   - kubernetes/typed/storage/v1
+  - kubernetes/typed/storage/v1alpha1
   - kubernetes/typed/storage/v1beta1
   - listers/admissionregistration/v1alpha1
+  - listers/admissionregistration/v1beta1
   - listers/apps/v1
   - listers/apps/v1beta1
   - listers/apps/v1beta2
@@ -514,6 +540,7 @@ imports:
   - listers/batch/v2alpha1
   - listers/certificates/v1beta1
   - listers/core/v1
+  - listers/events/v1beta1
   - listers/extensions/v1beta1
   - listers/networking/v1
   - listers/policy/v1beta1
@@ -523,6 +550,7 @@ imports:
   - listers/scheduling/v1alpha1
   - listers/settings/v1alpha1
   - listers/storage/v1
+  - listers/storage/v1alpha1
   - listers/storage/v1beta1
   - pkg/version
   - rest
@@ -543,11 +571,10 @@ imports:
   - util/homedir
   - util/integer
 - name: k8s.io/code-generator
-  version: b6644f7753f281ae6b8ef94867f84b060e2f5e59
-- name: k8s.io/gengo
-  version: 70ad626ed2d7a483d89d2c4c56364d60b48ee8fc
+  version: a2d2cd253949a90e95e2b2594a1df0fcd92bac28
+  repo: git@github.com:sttts/code-generator.git
 - name: k8s.io/kube-openapi
-  version: abfc5fbe1cf87ee697db107fdfd24c32fe4397a8
+  version: 39a7bf85c140f972372c2a0d1ee40adbf0c8bfe1
   subpackages:
   - pkg/builder
   - pkg/common
