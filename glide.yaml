@@ -1,9 +1,10 @@
 package: github.com/openshift/generic-admission-server
 import:
 - package: k8s.io/code-generator
-  version: master
+  branch: release-1.9
   repo: git@github.com:kubernetes-nightly/code-generator.git
 - package: k8s.io/client-go
+  branch: release-1.9
   repo: git@github.com:kubernetes-nightly/client-go.git
 - package: k8s.io/apimachinery
   repo: git@github.com:kubernetes-nightly/apimachinery.git
