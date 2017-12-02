@@ -1,5 +1,5 @@
-hash: 065488ddf564cbbad259ed27263ab2712ce61749553f67f4dae62f99ef458e3d
-updated: 2017-12-01T19:45:04.532991073+01:00
+hash: ec290d9ce72a96f5352eb9fe1e08b3d79ded5b848e3995b82021c01e5d39a944
+updated: 2017-12-02T09:39:53.360525998+01:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -198,7 +198,7 @@ imports:
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/spf13/cobra
-  version: 1be1d2841c773c01bee8289f55f7463b6e2c2539
+  version: f62e98d28ab7ad31d707ba837a966378465c7b57
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: github.com/ugorji/go
