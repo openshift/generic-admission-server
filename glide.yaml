@@ -4,12 +4,15 @@ import:
   branch: release-1.9
   repo: git@github.com:kubernetes-nightly/code-generator.git
 - package: k8s.io/client-go
-  branch: release-1.9
+  branch: release-6.0
   repo: git@github.com:kubernetes-nightly/client-go.git
 - package: k8s.io/apimachinery
   repo: git@github.com:kubernetes-nightly/apimachinery.git
 - package: k8s.io/apiserver
-  version: master
   repo: git@github.com:kubernetes-nightly/apiserver.git
 - package: k8s.io/api
   repo: git@github.com:kubernetes-nightly/api.git
+
+# select compatible cobra version for pflags 9ff6c6923cfffbcd502984b8e0c80539a94968b7 used in Kubernetes 1.9
+- package: github.com/spf13/cobra
+  version: f62e98d28ab7ad31d707ba837a966378465c7b57
