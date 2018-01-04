@@ -1,5 +1,5 @@
-hash: ec290d9ce72a96f5352eb9fe1e08b3d79ded5b848e3995b82021c01e5d39a944
-updated: 2017-12-02T09:39:53.360525998+01:00
+hash: db2d08713f05ca194526bc192c67a685a11b3ee9764e82773b769eb9dd91824f
+updated: 2018-01-04T10:01:00.597779127-05:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -273,8 +273,7 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/api
-  version: 41c0f68464e3bcdd63901fef7476daca2333a00b
-  repo: git@github.com:kubernetes-nightly/api.git
+  version: af4bc157c3a209798fc897f6d4aaaaeb6c2e0d6a
   subpackages:
   - admission/v1beta1
   - admissionregistration/v1alpha1
@@ -306,8 +305,7 @@ imports:
   - storage/v1alpha1
   - storage/v1beta1
 - name: k8s.io/apimachinery
-  version: f186b87c2880406e66da1e2b2c613dd0426ddb60
-  repo: git@github.com:kubernetes-nightly/apimachinery.git
+  version: 180eddb345a5be3a157cea1c624700ad5bd27b8f
   subpackages:
   - pkg/api/equality
   - pkg/api/errors
@@ -364,8 +362,7 @@ imports:
   - third_party/forked/golang/netutil
   - third_party/forked/golang/reflect
 - name: k8s.io/apiserver
-  version: af51491622a0ff3a95a299ee3ed4933b6885d02e
-  repo: git@github.com:kubernetes-nightly/apiserver.git
+  version: 91e14f394e4796abf5a994a349a222e7081d86b6
   subpackages:
   - pkg/admission
   - pkg/admission/configuration
@@ -453,8 +450,7 @@ imports:
   - plugin/pkg/authenticator/token/webhook
   - plugin/pkg/authorizer/webhook
 - name: k8s.io/client-go
-  version: 95f378e1ae97d8423ed7e93b3c243d3f474c2c11
-  repo: git@github.com:kubernetes-nightly/client-go.git
+  version: 78700dec6369ba22221b72770783300f143df150
   subpackages:
   - discovery
   - informers
@@ -570,8 +566,7 @@ imports:
   - util/homedir
   - util/integer
 - name: k8s.io/code-generator
-  version: 13f841d369cf284f6a14c03e19cc05bb64d1f9d3
-  repo: git@github.com:kubernetes-nightly/code-generator.git
+  version: fef8bcdbaf36ac6a1a18c9ef7d85200b249fad30
 - name: k8s.io/kube-openapi
   version: 39a7bf85c140f972372c2a0d1ee40adbf0c8bfe1
   subpackages:
