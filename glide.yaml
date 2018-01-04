@@ -1,17 +1,15 @@
 package: github.com/openshift/generic-admission-server
 import:
 - package: k8s.io/code-generator
-  branch: release-1.9
-  repo: git@github.com:kubernetes-nightly/code-generator.git
+  version: kubernetes-1.9.0
 - package: k8s.io/client-go
-  branch: release-6.0
-  repo: git@github.com:kubernetes-nightly/client-go.git
+  version: v6.0.0
 - package: k8s.io/apimachinery
-  repo: git@github.com:kubernetes-nightly/apimachinery.git
+  version: kubernetes-1.9.0
 - package: k8s.io/apiserver
-  repo: git@github.com:kubernetes-nightly/apiserver.git
+  version: kubernetes-1.9.0
 - package: k8s.io/api
-  repo: git@github.com:kubernetes-nightly/api.git
+  version: kubernetes-1.9.0
 
 # select compatible cobra version for pflags 9ff6c6923cfffbcd502984b8e0c80539a94968b7 used in Kubernetes 1.9
 - package: github.com/spf13/cobra
