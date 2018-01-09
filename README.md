@@ -14,4 +14,7 @@ func (a *admissionHook) ValidatingResource() (plural schema.GroupVersionResource
 
 // your business logic
 func (a *admissionHook) Validate(admissionSpec *admissionv1beta1.AdmissionRequest) *admissionv1beta1.AdmissionResponse {}
+
+// any special initialization goes here
+func (a *admissionHook) Initialize(kubeClientConfig *rest.Config, stopCh <-chan struct{}) error {}
 ```
