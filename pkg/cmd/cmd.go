@@ -21,7 +21,7 @@ type AdmissionHook apiserver.AdmissionHook
 type ValidatingAdmissionHook apiserver.ValidatingAdmissionHook
 type MutatingAdmissionHook apiserver.MutatingAdmissionHook
 
-func RunAdmission(admissionHooks ...AdmissionHook) {
+func RunAdmissionServer(admissionHooks ...AdmissionHook) {
 	logs.InitLogs()
 	defer logs.FlushLogs()
 
@@ -31,12 +31,12 @@ func RunAdmission(admissionHooks ...AdmissionHook) {
 
 	stopCh := genericapiserver.SetupSignalHandler()
 
-	// done to avoid cannot use admissionHooks (type []AdmissionHook) as type []apiserver.AdmissionHook in argument to "github.com/openshift/kubernetes-namespace-reservation/pkg/genericadmissionserver/cmd/server".NewCommandStartNamespaceReservationServer
-	castSlice := []apiserver.AdmissionHook{}
+	// done to avoid cannot use admissionHooks (type []AdmissionHook) as type []apiserver.AdmissionHook in argument to "github.com/openshift/kubernetes-namespace-reservation/pkg/genericadmissionserver/cmd/server".NewCommandStartAdmissionServer
+	var castSlice []apiserver.AdmissionHook
 	for i := range admissionHooks {
 		castSlice = append(castSlice, admissionHooks[i])
 	}
-	cmd := server.NewCommandStartNamespaceReservationServer(os.Stdout, os.Stderr, stopCh, castSlice...)
+	cmd := server.NewCommandStartAdmissionServer(os.Stdout, os.Stderr, stopCh, castSlice...)
 	cmd.Flags().AddGoFlagSet(flag.CommandLine)
 	if err := cmd.Execute(); err != nil {
 		glog.Fatal(err)
