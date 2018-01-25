@@ -82,8 +82,8 @@ type ExtraConfig struct {
 	AdmissionHooks []AdmissionHook
 }
 
-// NamespaceReservationServer contains state for a Kubernetes cluster master/api server.
-type NamespaceReservationServer struct {
+// AdmissionServer contains state for a Kubernetes cluster master/api server.
+type AdmissionServer struct {
 	GenericAPIServer *genericapiserver.GenericAPIServer
 }
 
@@ -112,14 +112,14 @@ func (c *Config) Complete() CompletedConfig {
 	return CompletedConfig{&completedCfg}
 }
 
-// New returns a new instance of NamespaceReservationServer from the given config.
-func (c completedConfig) New() (*NamespaceReservationServer, error) {
+// New returns a new instance of AdmissionServer from the given config.
+func (c completedConfig) New() (*AdmissionServer, error) {
 	genericServer, err := c.GenericConfig.New("kubernetes-namespace-reservation", genericapiserver.EmptyDelegate) // completion is done in Complete, no need for a second time
 	if err != nil {
 		return nil, err
 	}
 
-	s := &NamespaceReservationServer{
+	s := &AdmissionServer{
 		GenericAPIServer: genericServer,
 	}
 
@@ -211,7 +211,7 @@ func (c completedConfig) New() (*NamespaceReservationServer, error) {
 }
 
 func postStartHookName(hook AdmissionHook) string {
-	ns := []string{}
+	var ns []string
 	if mutatingHook, ok := hook.(MutatingAdmissionHook); ok {
 		gvr, _ := mutatingHook.MutatingResource()
 		ns = append(ns, fmt.Sprintf("mutating-%s.%s.%s", gvr.Resource, gvr.Version, gvr.Group))

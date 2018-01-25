@@ -16,7 +16,7 @@ import (
 
 const defaultEtcdPathPrefix = "/registry/online.openshift.io"
 
-type NamespaceReservationServerOptions struct {
+type AdmissionServerOptions struct {
 	RecommendedOptions *genericoptions.RecommendedOptions
 
 	AdmissionHooks []apiserver.AdmissionHook
@@ -25,8 +25,8 @@ type NamespaceReservationServerOptions struct {
 	StdErr io.Writer
 }
 
-func NewNamespaceReservationServerOptions(out, errOut io.Writer, admissionHooks ...apiserver.AdmissionHook) *NamespaceReservationServerOptions {
-	o := &NamespaceReservationServerOptions{
+func NewAdmissionServerOptions(out, errOut io.Writer, admissionHooks ...apiserver.AdmissionHook) *AdmissionServerOptions {
+	o := &AdmissionServerOptions{
 		// TODO we will nil out the etcd storage options.  This requires a later level of k8s.io/apiserver
 		RecommendedOptions: genericoptions.NewRecommendedOptions(defaultEtcdPathPrefix, apiserver.Codecs.LegacyCodec(admissionv1beta1.SchemeGroupVersion)),
 
@@ -41,8 +41,8 @@ func NewNamespaceReservationServerOptions(out, errOut io.Writer, admissionHooks 
 }
 
 // NewCommandStartMaster provides a CLI handler for 'start master' command
-func NewCommandStartNamespaceReservationServer(out, errOut io.Writer, stopCh <-chan struct{}, admissionHooks ...apiserver.AdmissionHook) *cobra.Command {
-	o := NewNamespaceReservationServerOptions(out, errOut, admissionHooks...)
+func NewCommandStartAdmissionServer(out, errOut io.Writer, stopCh <-chan struct{}, admissionHooks ...apiserver.AdmissionHook) *cobra.Command {
+	o := NewAdmissionServerOptions(out, errOut, admissionHooks...)
 
 	cmd := &cobra.Command{
 		Short: "Launch a namespace reservation API server",
@@ -54,7 +54,7 @@ func NewCommandStartNamespaceReservationServer(out, errOut io.Writer, stopCh <-c
 			if err := o.Validate(args); err != nil {
 				return err
 			}
-			if err := o.RunNamespaceReservationServer(stopCh); err != nil {
+			if err := o.RunAdmissionServer(stopCh); err != nil {
 				return err
 			}
 			return nil
@@ -67,15 +67,15 @@ func NewCommandStartNamespaceReservationServer(out, errOut io.Writer, stopCh <-c
 	return cmd
 }
 
-func (o NamespaceReservationServerOptions) Validate(args []string) error {
+func (o AdmissionServerOptions) Validate(args []string) error {
 	return nil
 }
 
-func (o *NamespaceReservationServerOptions) Complete() error {
+func (o *AdmissionServerOptions) Complete() error {
 	return nil
 }
 
-func (o NamespaceReservationServerOptions) Config() (*apiserver.Config, error) {
+func (o AdmissionServerOptions) Config() (*apiserver.Config, error) {
 	// TODO have a "real" external address
 	if err := o.RecommendedOptions.SecureServing.MaybeDefaultWithSelfSignedCerts("localhost", nil, []net.IP{net.ParseIP("127.0.0.1")}); err != nil {
 		return nil, fmt.Errorf("error creating self-signed certificates: %v", err)
@@ -95,7 +95,7 @@ func (o NamespaceReservationServerOptions) Config() (*apiserver.Config, error) {
 	return config, nil
 }
 
-func (o NamespaceReservationServerOptions) RunNamespaceReservationServer(stopCh <-chan struct{}) error {
+func (o AdmissionServerOptions) RunAdmissionServer(stopCh <-chan struct{}) error {
 	config, err := o.Config()
 	if err != nil {
 		return err
