@@ -6,7 +6,7 @@ A library for writing admission webhooks based on k8s.io/apiserver
 import "github.com/openshift/generic-admission-server/pkg/cmd"
 
 func main() {
-	cmd.RunAdmission(&admissionHook{})
+	cmd.RunAdmissionServer(&admissionHook{})
 }
 
 // where to host it
