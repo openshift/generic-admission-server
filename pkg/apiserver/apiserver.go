@@ -177,7 +177,7 @@ func (c completedConfig) New() (*AdmissionServer, error) {
 					meta.RESTScopeRoot)
 
 				// just overwrite the groupversion with a random one.  We don't really care or know.
-				apiGroupInfo.GroupMeta.GroupVersions = append(apiGroupInfo.GroupMeta.GroupVersions, admissionVersion)
+				apiGroupInfo.GroupMeta.GroupVersions = appendUniqueGroupVersion(apiGroupInfo.GroupMeta.GroupVersions, admissionVersion)
 
 				admissionReview := admissionreview.NewREST(admissionHook.Admission)
 				v1alpha1storage := map[string]rest.Storage{
@@ -208,6 +208,21 @@ func (c completedConfig) New() (*AdmissionServer, error) {
 	}
 
 	return s, nil
+}
+
+func appendUniqueGroupVersion(slice []schema.GroupVersion, elems ...schema.GroupVersion) []schema.GroupVersion {
+	m := map[schema.GroupVersion]bool{}
+	for _, gv := range slice {
+		m[gv] = true
+	}
+	for _, e := range elems {
+		m[e] = true
+	}
+	out := make([]schema.GroupVersion, 0, len(m))
+	for gv := range m {
+		out = append(out, gv)
+	}
+	return out
 }
 
 func postStartHookName(hook AdmissionHook) string {
