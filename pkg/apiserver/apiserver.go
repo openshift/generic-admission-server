@@ -180,9 +180,11 @@ func (c completedConfig) New() (*AdmissionServer, error) {
 				apiGroupInfo.GroupMeta.GroupVersions = appendUniqueGroupVersion(apiGroupInfo.GroupMeta.GroupVersions, admissionVersion)
 
 				admissionReview := admissionreview.NewREST(admissionHook.Admission)
-				v1alpha1storage := map[string]rest.Storage{
-					admissionResource.Resource: admissionReview,
+				v1alpha1storage, ok := apiGroupInfo.VersionedResourcesStorageMap[admissionVersion.Version]
+				if !ok {
+					v1alpha1storage = map[string]rest.Storage{}
 				}
+				v1alpha1storage[admissionResource.Resource] = admissionReview
 				apiGroupInfo.VersionedResourcesStorageMap[admissionVersion.Version] = v1alpha1storage
 			}
 		}
@@ -195,14 +197,15 @@ func (c completedConfig) New() (*AdmissionServer, error) {
 		}
 	}
 
-	for _, hook := range c.ExtraConfig.AdmissionHooks {
-		postStartName := postStartHookName(hook)
+	for i := range c.ExtraConfig.AdmissionHooks {
+		admissionHook := c.ExtraConfig.AdmissionHooks[i]
+		postStartName := postStartHookName(admissionHook)
 		if len(postStartName) == 0 {
 			continue
 		}
 		s.GenericAPIServer.AddPostStartHookOrDie(postStartName,
 			func(context genericapiserver.PostStartHookContext) error {
-				return hook.Initialize(inClusterConfig, context.StopCh)
+				return admissionHook.Initialize(inClusterConfig, context.StopCh)
 			},
 		)
 	}
