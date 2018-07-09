@@ -36,6 +36,7 @@ func NewAdmissionServerOptions(out, errOut io.Writer, admissionHooks ...apiserve
 		StdErr: errOut,
 	}
 	o.RecommendedOptions.Etcd = nil
+	o.RecommendedOptions.Admission = nil
 
 	return o
 }
