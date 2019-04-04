@@ -105,12 +105,7 @@ func (c *typeConverter) YAMLToTyped(from []byte) (typed.TypedValue, error) {
 		return nil, fmt.Errorf("error decoding YAML: %v", err)
 	}
 
-	gvk := unstructured.GetObjectKind().GroupVersionKind()
-	t := c.parser.Type(gvk)
-	if t == nil {
-		return nil, fmt.Errorf("no corresponding type for %v", gvk)
-	}
-	return t.FromYAML(typed.YAMLObject(string(from)))
+	return c.ObjectToTyped(unstructured)
 }
 
 func (c *typeConverter) TypedToObject(value typed.TypedValue) (runtime.Object, error) {

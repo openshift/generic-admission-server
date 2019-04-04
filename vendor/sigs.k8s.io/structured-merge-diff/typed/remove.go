@@ -86,10 +86,6 @@ func (w *removingWalker) doList(t schema.List) (errs ValidationErrors) {
 		newItems = append(newItems, l.Items[i])
 	}
 	l.Items = newItems
-	if len(l.Items) == 0 {
-		w.value.ListValue = nil
-		w.value.Null = true
-	}
 	return nil
 }
 
@@ -115,10 +111,6 @@ func (w *removingWalker) doMap(t schema.Map) ValidationErrors {
 		newMap.Set(item.Name, m.Items[i].Value)
 	}
 	w.value.MapValue = newMap
-	if len(w.value.MapValue.Items) == 0 {
-		w.value.MapValue = nil
-		w.value.Null = true
-	}
 	return nil
 }
 

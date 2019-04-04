@@ -49,31 +49,7 @@ type Rule struct {
 	// Depending on the enclosing object, subresources might not be allowed.
 	// Required.
 	Resources []string `json:"resources,omitempty" protobuf:"bytes,3,rep,name=resources"`
-
-	// scope specifies the scope of this rule.
-	// Valid values are "Cluster", "Namespaced", and "*"
-	// "Cluster" means that only cluster-scoped resources will match this rule.
-	// Namespace API objects are cluster-scoped.
-	// "Namespaced" means that only namespaced resources will match this rule.
-	// "*" means that there are no scope restrictions.
-	// Subresources match the scope of their parent resource.
-	// Default is "*".
-	//
-	// +optional
-	Scope *ScopeType `json:"scope,omitempty" protobuf:"bytes,4,rep,name=scope"`
 }
-
-type ScopeType string
-
-const (
-	// ClusterScope means that scope is limited to cluster-scoped objects.
-	// Namespace objects are cluster-scoped.
-	ClusterScope ScopeType = "Cluster"
-	// NamespacedScope means that scope is limited to namespaced objects.
-	NamespacedScope ScopeType = "Namespaced"
-	// AllScopes means that all scopes are included.
-	AllScopes ScopeType = "*"
-)
 
 type FailurePolicyType string
 
@@ -248,17 +224,6 @@ type Webhook struct {
 	// Default to 30 seconds.
 	// +optional
 	TimeoutSeconds *int32 `json:"timeoutSeconds,omitempty" protobuf:"varint,7,opt,name=timeoutSeconds"`
-
-	// AdmissionReviewVersions is an ordered list of preferred `AdmissionReview`
-	// versions the Webhook expects. API server will try to use first version in
-	// the list which it supports. If none of the versions specified in this list
-	// supported by API server, validation will fail for this object.
-	// If a persisted webhook configuration specifies allowed versions and does not
-	// include any versions known to the API Server, calls to the webhook will fail
-	// and be subject to the failure policy.
-	// Default to `['v1beta1']`.
-	// +optional
-	AdmissionReviewVersions []string `json:"admissionReviewVersions,omitempty" protobuf:"bytes,8,rep,name=admissionReviewVersions"`
 }
 
 // RuleWithOperations is a tuple of Operations and Resources. It is recommended to make

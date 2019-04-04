@@ -35,37 +35,52 @@ type State struct {
 	Updater  *merge.Updater
 }
 
-// FixTabsOrDie counts the number of tab characters preceding the first
-// line in the given yaml object. It removes that many tabs from every
-// line. It panics (it's a test funtion) if some line has fewer tabs
-// than the first line.
+// FixTabsOrDie counts the number of tab characters preceding the first line in
+// the given yaml object. It removes that many tabs from every line. It then
+// converts remaining tabs to spaces (two spaces per tab). It panics (it's a
+// test funtion) if it finds mixed tabs and spaces in front of a line, or if
+// some line has fewer tabs than the first line.
 //
 // The purpose of this is to make it easier to read tests.
 func FixTabsOrDie(in typed.YAMLObject) typed.YAMLObject {
+	consumeTabs := func(line []byte) (tabCount int, spacesFound bool) {
+		for _, c := range line {
+			if c == ' ' {
+				spacesFound = true
+			}
+			if c != '\t' {
+				break
+			}
+			tabCount++
+		}
+		return tabCount, spacesFound
+	}
+
 	lines := bytes.Split([]byte(in), []byte{'\n'})
 	if len(lines[0]) == 0 && len(lines) > 1 {
 		lines = lines[1:]
 	}
-	// Create prefix made of tabs that we want to remove.
-	var prefix []byte
-	for _, c := range lines[0] {
-		if c != '\t' {
-			break
-		}
-		prefix = append(prefix, byte('\t'))
-	}
-	// Remove prefix from all tabs, fail otherwise.
+	prefix, _ := consumeTabs(lines[0])
+	var anySpacesFound bool
+	var anyTabsFound bool
+
 	for i := range lines {
 		line := lines[i]
-		// It's OK for the last line to be blank (trailing \n)
-		if i == len(lines)-1 && len(line) <= len(prefix) && bytes.TrimSpace(line) == nil {
+		indent, spacesFound := consumeTabs(line)
+		if i == len(lines)-1 && len(line) <= prefix && indent == len(line) {
+			// It's OK for the last line to be blank (trailing \n)
 			lines[i] = []byte{}
 			break
 		}
-		if !bytes.HasPrefix(line, prefix) {
-			panic(fmt.Errorf("line %d doesn't start with expected number (%d) of tabs: %v", i, len(prefix), line))
+		anySpacesFound = anySpacesFound || spacesFound
+		anyTabsFound = anyTabsFound || indent > 0
+		if indent < prefix {
+			panic(fmt.Sprintf("line %v doesn't have %v tabs as a prefix:\n%s", i, prefix, in))
 		}
-		lines[i] = line[len(prefix):]
+		lines[i] = append(bytes.Repeat([]byte{' ', ' '}, indent-prefix), line[indent:]...)
+	}
+	if anyTabsFound && anySpacesFound {
+		panic("mixed tabs and spaces found:\n" + string(in))
 	}
 	return typed.YAMLObject(bytes.Join(lines, []byte{'\n'}))
 }
@@ -88,10 +103,6 @@ func (s *State) Update(obj typed.YAMLObject, version fieldpath.APIVersion, manag
 		return err
 	}
 	tv, err := s.Parser.FromYAML(obj)
-	s.Live , err = s.Updater.Converter.Convert(s.Live, version)
-	if err != nil {
-		return err
-	}
 	managers, err := s.Updater.Update(s.Live, tv, version, s.Managers, manager)
 	if err != nil {
 		return err
@@ -109,10 +120,6 @@ func (s *State) Apply(obj typed.YAMLObject, version fieldpath.APIVersion, manage
 		return err
 	}
 	tv, err := s.Parser.FromYAML(obj)
-	if err != nil {
-		return err
-	}
-	s.Live , err = s.Updater.Converter.Convert(s.Live, version)
 	if err != nil {
 		return err
 	}
@@ -143,8 +150,6 @@ func (s *State) CompareLive(obj typed.YAMLObject) (*typed.Comparison, error) {
 // dummyConverter doesn't convert, it just returns the same exact object, as long as a version is provided.
 type dummyConverter struct{}
 
-var _ merge.Converter = dummyConverter{}
-
 // Convert returns the object given in input, not doing any conversion.
 func (dummyConverter) Convert(v typed.TypedValue, version fieldpath.APIVersion) (typed.TypedValue, error) {
 	if len(version) == 0 {
@@ -153,32 +158,9 @@ func (dummyConverter) Convert(v typed.TypedValue, version fieldpath.APIVersion) 
 	return v, nil
 }
 
-func (dummyConverter) IsMissingVersionError(err error) bool {
-	return false
-}
-
 // Operation is a step that will run when building a table-driven test.
 type Operation interface {
 	run(*State) error
-}
-
-func hasConflict(conflicts merge.Conflicts, conflict merge.Conflict) bool {
-	for i := range conflicts {
-		if reflect.DeepEqual(conflict, conflicts[i]) {
-			return true
-		}
-	}
-	return false
-}
-
-func addedConflicts(one, other merge.Conflicts) merge.Conflicts {
-	added := merge.Conflicts{}
-	for _, conflict := range other {
-		if !hasConflict(one, conflict) {
-			added = append(added, conflict)
-		}
-	}
-	return added
 }
 
 // Apply is a type of operation. It is a non-forced apply run by a
@@ -196,24 +178,8 @@ var _ Operation = &Apply{}
 
 func (a Apply) run(state *State) error {
 	err := state.Apply(a.Object, a.APIVersion, a.Manager, false)
-	if err != nil {
-		if _, ok := err.(merge.Conflicts); !ok || a.Conflicts == nil {
-			return err
-		}
-	}
-	if a.Conflicts != nil {
-		conflicts := merge.Conflicts{}
-		if err != nil {
-			conflicts = err.(merge.Conflicts)
-		}
-		if len(addedConflicts(a.Conflicts, conflicts)) != 0 || len(addedConflicts(conflicts, a.Conflicts)) != 0 {
-			return fmt.Errorf("Expected conflicts:\n%v\ngot\n%v\nadded:\n%v\nremoved:\n%v",
-				a.Conflicts.Error(),
-				conflicts.Error(),
-				addedConflicts(a.Conflicts, conflicts).Error(),
-				addedConflicts(conflicts, a.Conflicts).Error(),
-			)
-		}
+	if (err != nil || a.Conflicts != nil) && !reflect.DeepEqual(err, a.Conflicts) {
+		return fmt.Errorf("expected conflicts: %v, got %v", a.Conflicts, err)
 	}
 	return nil
 
@@ -264,15 +230,10 @@ type TestCase struct {
 	Managed fieldpath.ManagedFields
 }
 
-// Test runs the test-case using the given parser and a dummy converter.
+// Test runs the test-case using the given parser.
 func (tc TestCase) Test(parser typed.ParseableType) error {
-	return tc.TestWithConverter(parser, &dummyConverter{})
-}
-
-// TestWithConverter runs the test-case using the given parser and converter.
-func (tc TestCase) TestWithConverter(parser typed.ParseableType, converter merge.Converter) error {
 	state := State{
-		Updater: &merge.Updater{Converter: converter},
+		Updater: &merge.Updater{Converter: &dummyConverter{}},
 		Parser:  parser,
 	}
 	// We currently don't have any test that converts, we can take

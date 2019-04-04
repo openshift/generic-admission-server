@@ -23,7 +23,6 @@ import (
 
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
@@ -31,8 +30,8 @@ import (
 
 // TestFakeClient demonstrates how to use a fake client with SharedInformerFactory in tests.
 func TestFakeClient(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	// Use a timeout to keep the test from hanging.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
 	// Create the fake client.
 	client := fake.NewSimpleClientset()
@@ -46,6 +45,7 @@ func TestFakeClient(t *testing.T) {
 			pod := obj.(*v1.Pod)
 			t.Logf("pod added: %s/%s", pod.Namespace, pod.Name)
 			pods <- pod
+			cancel()
 		},
 	})
 
@@ -55,19 +55,23 @@ func TestFakeClient(t *testing.T) {
 	// This is not required in tests, but it serves as a proof-of-concept by
 	// ensuring that the informer goroutine have warmed up and called List before
 	// we send any events to it.
-	cache.WaitForCacheSync(ctx.Done(), podInformer.HasSynced)
+	for !podInformer.HasSynced() {
+		time.Sleep(10 * time.Millisecond)
+	}
 
 	// Inject an event into the fake client.
 	p := &v1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "my-pod"}}
 	_, err := client.CoreV1().Pods("test-ns").Create(p)
 	if err != nil {
-		t.Fatalf("error injecting pod add: %v", err)
+		t.Errorf("error injecting pod add: %v", err)
 	}
 
+	// Wait and check result.
+	<-ctx.Done()
 	select {
 	case pod := <-pods:
 		t.Logf("Got pod from channel: %s/%s", pod.Namespace, pod.Name)
-	case <-time.After(wait.ForeverTestTimeout):
+	default:
 		t.Error("Informer did not get the added pod")
 	}
 }

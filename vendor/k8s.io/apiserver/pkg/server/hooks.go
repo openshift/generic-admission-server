@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"runtime/debug"
 
 	"k8s.io/klog"
 
@@ -59,9 +58,6 @@ type PostStartHookProvider interface {
 
 type postStartHookEntry struct {
 	hook PostStartHookFunc
-	// originatingStack holds the stack that registered postStartHooks. This allows us to show a more helpful message
-	// for duplicate registration.
-	originatingStack string
 
 	// done will be closed when the postHook is finished
 	done chan struct{}
@@ -89,9 +85,8 @@ func (s *GenericAPIServer) AddPostStartHook(name string, hook PostStartHookFunc)
 	if s.postStartHooksCalled {
 		return fmt.Errorf("unable to add %q because PostStartHooks have already been called", name)
 	}
-	if postStartHook, exists := s.postStartHooks[name]; exists {
-		// this is programmer error, but it can be hard to debug
-		return fmt.Errorf("unable to add %q because it was already registered by: %s", name, postStartHook.originatingStack)
+	if _, exists := s.postStartHooks[name]; exists {
+		return fmt.Errorf("unable to add %q because it is already registered", name)
 	}
 
 	// done is closed when the poststarthook is finished.  This is used by the health check to be able to indicate
@@ -100,7 +95,7 @@ func (s *GenericAPIServer) AddPostStartHook(name string, hook PostStartHookFunc)
 	if err := s.AddHealthzChecks(postStartHookHealthz{name: "poststarthook/" + name, done: done}); err != nil {
 		return err
 	}
-	s.postStartHooks[name] = postStartHookEntry{hook: hook, originatingStack: string(debug.Stack()), done: done}
+	s.postStartHooks[name] = postStartHookEntry{hook: hook, done: done}
 
 	return nil
 }

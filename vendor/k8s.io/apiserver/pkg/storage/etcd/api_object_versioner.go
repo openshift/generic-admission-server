@@ -101,7 +101,7 @@ func (a APIObjectVersioner) ParseResourceVersion(resourceVersion string) (uint64
 	return version, nil
 }
 
-// Versioner implements Versioner
+// APIObjectVersioner implements Versioner
 var Versioner storage.Versioner = APIObjectVersioner{}
 
 // CompareResourceVersion compares etcd resource versions.  Outside this API they are all strings,

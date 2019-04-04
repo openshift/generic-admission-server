@@ -1,5 +1,5 @@
-hash: e1f464c8d4a4acf1498bc7eec392496b95e4419b7184bfe282f30cce677cf287
-updated: 2019-04-04T15:08:28.949239+01:00
+hash: 790bcc168c57b81969630b5aa4d137c0d96e5cbf9adc4370244a799e29055c1b
+updated: 2019-04-04T15:16:13.743275+01:00
 imports:
 - name: github.com/beorn7/perks
   version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
@@ -206,14 +206,14 @@ imports:
   - salsa20/salsa
   - ssh/terminal
 - name: golang.org/x/net
-  version: 65e2d4e15006aab9813ff8769e768bbf4bb667a0
+  version: 0ed95abb35c445290478a5348a7b38bb154135fd
   subpackages:
   - context
-  - http/httpguts
   - http2
   - http2/hpack
   - idna
   - internal/timeseries
+  - lex/httplex
   - trace
   - websocket
 - name: golang.org/x/oauth2
@@ -293,7 +293,7 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
 - name: k8s.io/api
-  version: 40a48860b5abbba9aa891b02b32da429b08d96a0
+  version: 16f65c82b8fa063598f779f64079bd40275a0248
   subpackages:
   - admission/v1beta1
   - admissionregistration/v1beta1
@@ -319,8 +319,6 @@ imports:
   - extensions/v1beta1
   - networking/v1
   - networking/v1beta1
-  - node/v1alpha1
-  - node/v1beta1
   - policy/v1beta1
   - rbac/v1
   - rbac/v1alpha1
@@ -333,7 +331,7 @@ imports:
   - storage/v1alpha1
   - storage/v1beta1
 - name: k8s.io/apimachinery
-  version: d7deff9243b165ee192f5551710ea4285dcfd615
+  version: 2f7e9cae4418a86ea03618fea183bfe9fe43c574
   subpackages:
   - pkg/api/equality
   - pkg/api/errors
@@ -385,7 +383,7 @@ imports:
   - third_party/forked/golang/json
   - third_party/forked/golang/reflect
 - name: k8s.io/apiserver
-  version: 8b27c41bdbb11ff103caa673315e097bf0289171
+  version: a63f6f9c2ab2ee90e80b208ab722562e6f9f4af0
   subpackages:
   - pkg/admission
   - pkg/admission/configuration
@@ -482,7 +480,7 @@ imports:
   - plugin/pkg/authenticator/token/webhook
   - plugin/pkg/authorizer/webhook
 - name: k8s.io/client-go
-  version: 6ee68ca5fd8355d024d02f9db0b3b667e8357a0f
+  version: 9c9f7f424e65af6ded246bd4ba1a1cec988acc7b
   subpackages:
   - discovery
   - informers
@@ -517,9 +515,6 @@ imports:
   - informers/networking
   - informers/networking/v1
   - informers/networking/v1beta1
-  - informers/node
-  - informers/node/v1alpha1
-  - informers/node/v1beta1
   - informers/policy
   - informers/policy/v1beta1
   - informers/rbac
@@ -561,8 +556,6 @@ imports:
   - kubernetes/typed/extensions/v1beta1
   - kubernetes/typed/networking/v1
   - kubernetes/typed/networking/v1beta1
-  - kubernetes/typed/node/v1alpha1
-  - kubernetes/typed/node/v1beta1
   - kubernetes/typed/policy/v1beta1
   - kubernetes/typed/rbac/v1
   - kubernetes/typed/rbac/v1alpha1
@@ -593,8 +586,6 @@ imports:
   - listers/extensions/v1beta1
   - listers/networking/v1
   - listers/networking/v1beta1
-  - listers/node/v1alpha1
-  - listers/node/v1beta1
   - listers/policy/v1beta1
   - listers/rbac/v1
   - listers/rbac/v1alpha1
@@ -632,14 +623,14 @@ imports:
   - util/keyutil
   - util/retry
 - name: k8s.io/code-generator
-  version: 50b561225d70b3eb79a1faafd3dfe7b1a62cbe73
+  version: 916349668d3dd112a0dd9e5133d9f6db126011b2
 - name: k8s.io/component-base
-  version: 4a91899592f42b2f5859587cc5a676a5b94d2ee3
+  version: d7891e8054cac2ad6b41ddc8aa35d487962c4295
   subpackages:
   - cli/flag
   - logs
 - name: k8s.io/klog
-  version: 8e90cee79f823779174776412c13478955131846
+  version: 8139d8cb77af419532b33dfa7dd09fbc5f1d344f
 - name: k8s.io/kube-openapi
   version: b3a7cee44a305be0a69e1b9ac03018307287e1b0
   subpackages:
@@ -657,7 +648,7 @@ imports:
   - pointer
   - trace
 - name: sigs.k8s.io/structured-merge-diff
-  version: e85c7b244fd2cc57bb829d73a061f93a441e63ce
+  version: e5e029740eb81ee0217ecf9d950c25a0eeb9688a
   subpackages:
   - fieldpath
   - merge

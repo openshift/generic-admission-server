@@ -68,6 +68,7 @@ metadata:
   labels:
     app: nginx
 spec:
+  replicas: 3
   selector:
     matchLabels:
       app: nginx
@@ -90,6 +91,7 @@ metadata:
   labels:
     app: nginx
 spec:
+  replicas: 3
   selector:
     matchLabels:
       app: nginx

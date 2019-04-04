@@ -147,68 +147,6 @@ func TestUpdateSet(t *testing.T) {
 				},
 			},
 		},
-		"apply_update_apply_no_overlap_and_different_version": {
-			Ops: []Operation{
-				Apply{
-					Manager:    "default",
-					APIVersion: "v1",
-					Object: `
-						list:
-						- a
-						- c
-					`,
-				},
-				Update{
-					Manager:    "controller",
-					APIVersion: "v2",
-					Object: `
-						list:
-						- a
-						- b
-						- c
-						- d
-					`,
-				},
-				Apply{
-					Manager:    "default",
-					APIVersion: "v1",
-					Object: `
-						list:
-						- a
-						- aprime
-						- c
-						- cprime
-					`,
-				},
-			},
-			Object: `
-				list:
-				- a
-				- aprime
-				- b
-				- c
-				- cprime
-				- d
-			`,
-			Managed: fieldpath.ManagedFields{
-				"default": &fieldpath.VersionedSet{
-					Set: _NS(
-						_P("list", _SV("a")),
-						_P("list", _SV("aprime")),
-						_P("list", _SV("c")),
-						_P("list", _SV("cprime")),
-					),
-					APIVersion: "v1",
-				},
-				"controller": &fieldpath.VersionedSet{
-					Set: _NS(
-						_P("list", _SV("b")),
-						_P("list", _SV("d")),
-					),
-					APIVersion: "v2",
-				},
-			},
-		},
 		"apply_update_apply_with_overlap": {
 			Ops: []Operation{
 				Apply{
@@ -264,64 +202,6 @@ func TestUpdateSet(t *testing.T) {
 						_P("list", _SV("d")),
 					),
 					APIVersion: "v1",
-				},
-			},
-		},
-		"apply_update_apply_with_overlap_and_different_version": {
-			Ops: []Operation{
-				Apply{
-					Manager:    "default",
-					APIVersion: "v1",
-					Object: `
-						list:
-						- a
-						- c
-					`,
-				},
-				Update{
-					Manager:    "controller",
-					APIVersion: "v2",
-					Object: `
-						list:
-						- a
-						- b
-						- c
-						- d
-					`,
-				},
-				Apply{
-					Manager:    "default",
-					APIVersion: "v1",
-					Object: `
-						list:
-						- a
-						- b
-						- c
-					`,
-				},
-			},
-			Object: `
-				list:
-				- a
-				- b
-				- c
-				- d
-			`,
-			Managed: fieldpath.ManagedFields{
-				"default": &fieldpath.VersionedSet{
-					Set: _NS(
-						_P("list", _SV("a")),
-						_P("list", _SV("b")),
-						_P("list", _SV("c")),
-					),
-					APIVersion: "v1",
-				},
-				"controller": &fieldpath.VersionedSet{
-					Set: _NS(
-						_P("list", _SV("b")),
-						_P("list", _SV("d")),
-					),
-					APIVersion: "v2",
 				},
 			},
 		},
@@ -424,61 +304,6 @@ func TestUpdateSet(t *testing.T) {
 				},
 			},
 		},
-		"apply_update_apply_reorder_across_versions": {
-			Ops: []Operation{
-				Apply{
-					Manager:    "default",
-					APIVersion: "v1",
-					Object: `
-						list:
-						- a
-						- b
-						- c
-						- d
-					`,
-				},
-				Update{
-					Manager:    "controller",
-					APIVersion: "v1",
-					Object: `
-						list:
-						- a
-						- d
-						- c
-						- b
-					`,
-				},
-				Apply{
-					Manager:    "default",
-					APIVersion: "v2",
-					Object: `
-						list:
-						- a
-						- b
-						- c
-						- d
-					`,
-				},
-			},
-			Object: `
-				list:
-				- a
-				- b
-				- c
-				- d
-			`,
-			Managed: fieldpath.ManagedFields{
-				"default": &fieldpath.VersionedSet{
-					Set: _NS(
-						_P("list", _SV("a")),
-						_P("list", _SV("b")),
-						_P("list", _SV("c")),
-						_P("list", _SV("d")),
-					),
-					APIVersion: "v2",
-				},
-			},
-		},
 		"apply_twice_remove": {
 			Ops: []Operation{
 				Apply{
@@ -514,47 +339,6 @@ func TestUpdateSet(t *testing.T) {
 						_P("list", _SV("c")),
 					),
 					APIVersion: "v1",
-				},
-			},
-		},
-		"apply_twice_remove_across_versions": {
-			Ops: []Operation{
-				Apply{
-					Manager:    "default",
-					APIVersion: "v1",
-					Object: `
-						list:
-						- a
-						- b
-						- c
-						- d
-					`,
-				},
-				Apply{
-					Manager:    "default",
-					APIVersion: "v2",
-					Object: `
-						list:
-						- a
-						- c
-						- e
-					`,
-				},
-			},
-			Object: `
-				list:
-				- a
-				- c
-				- e
-			`,
-			Managed: fieldpath.ManagedFields{
-				"default": &fieldpath.VersionedSet{
-					Set: _NS(
-						_P("list", _SV("a")),
-						_P("list", _SV("c")),
-						_P("list", _SV("e")),
-					),
-					APIVersion: "v2",
 				},
 			},
 		},

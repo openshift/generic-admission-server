@@ -184,16 +184,12 @@ func (rw *RetryWatcher) doReceive() (bool, time.Duration) {
 				continue
 
 			case watch.Error:
-				// This round trip allows us to handle unstructured status
-				errObject := apierrors.FromObject(event.Object)
-				statusErr, ok := errObject.(*apierrors.StatusError)
+				status, ok := event.Object.(*metav1.Status)
 				if !ok {
 					klog.Error(spew.Sprintf("Received an error which is not *metav1.Status but %#+v", event.Object))
 					// Retry unknown errors
 					return false, 0
 				}
-
-				status := statusErr.ErrStatus
 
 				statusDelay := time.Duration(0)
 				if status.Details != nil {

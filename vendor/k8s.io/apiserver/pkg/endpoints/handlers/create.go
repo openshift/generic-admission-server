@@ -17,14 +17,11 @@ limitations under the License.
 package handlers
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
-	"unicode"
-	"unicode/utf8"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
@@ -144,7 +141,7 @@ func createHandler(r rest.NamedCreater, scope RequestScope, admit admission.Inte
 				return
 			}
 
-			obj, err = scope.FieldManager.Update(liveObj, obj, managerOrUserAgent(options.FieldManager, req.UserAgent()))
+			obj, err = scope.FieldManager.Update(liveObj, obj, prefixFromUserAgent(req.UserAgent()))
 			if err != nil {
 				scope.err(fmt.Errorf("failed to update object (Create for %v) managed fields: %v", scope.Kind, err), w, req)
 				return
@@ -196,31 +193,6 @@ func (c *namedCreaterAdapter) Create(ctx context.Context, name string, obj runti
 	return c.Creater.Create(ctx, obj, createValidatingAdmission, options)
 }
 
-// manager is assumed to be already a valid value, we need to make
-// userAgent into a valid value too.
-func managerOrUserAgent(manager, userAgent string) string {
-	if manager != "" {
-		return manager
-	}
-	return prefixFromUserAgent(userAgent)
-}
-
-// prefixFromUserAgent takes the characters preceding the first /, quote
-// unprintable character and then trim what's beyond the
-// FieldManagerMaxLength limit.
 func prefixFromUserAgent(u string) string {
-	m := strings.Split(u, "/")[0]
-	buf := bytes.NewBuffer(nil)
-	for _, r := range m {
-		// Ignore non-printable characters
-		if !unicode.IsPrint(r) {
-			continue
-		}
-		// Only append if we have room for it
-		if buf.Len()+utf8.RuneLen(r) > validation.FieldManagerMaxLength {
-			break
-		}
-		buf.WriteRune(r)
-	}
-	return buf.String()
+	return strings.Split(u, "/")[0]
 }

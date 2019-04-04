@@ -81,40 +81,6 @@ func TestUpdateLeaf(t *testing.T) {
 				},
 			},
 		},
-		"apply_twice_different_versions": {
-			Ops: []Operation{
-				Apply{
-					Manager: "default",
-					Object: `
-						numeric: 1
-						string: "string"
-					`,
-					APIVersion: "v1",
-				},
-				Apply{
-					Manager: "default",
-					Object: `
-						numeric: 2
-						string: "string"
-						bool: false
-					`,
-					APIVersion: "v2",
-				},
-			},
-			Object: `
-				numeric: 2
-				string: "string"
-				bool: false
-			`,
-			Managed: fieldpath.ManagedFields{
-				"default": &fieldpath.VersionedSet{
-					Set: _NS(
-						_P("numeric"), _P("string"), _P("bool"),
-					),
-					APIVersion: "v2",
-				},
-			},
-		},
 		"apply_update_apply_no_conflict": {
 			Ops: []Operation{
 				Apply{
@@ -160,54 +126,6 @@ func TestUpdateLeaf(t *testing.T) {
 						_P("bool"),
 					),
 					APIVersion: "v1",
-				},
-			},
-		},
-		"apply_update_apply_no_conflict_different_version": {
-			Ops: []Operation{
-				Apply{
-					Manager:    "default",
-					APIVersion: "v1",
-					Object: `
-						numeric: 1
-						string: "string"
-					`,
-				},
-				Update{
-					Manager:    "controller",
-					APIVersion: "v2",
-					Object: `
-						numeric: 1
-						string: "string"
-						bool: true
-					`,
-				},
-				Apply{
-					Manager:    "default",
-					APIVersion: "v1",
-					Object: `
-						numeric: 2
-						string: "string"
-					`,
-				},
-			},
-			Object: `
-				numeric: 2
-				string: "string"
-				bool: true
-			`,
-			Managed: fieldpath.ManagedFields{
-				"default": &fieldpath.VersionedSet{
-					Set: _NS(
-						_P("numeric"), _P("string"),
-					),
-					APIVersion: "v1",
-				},
-				"controller": &fieldpath.VersionedSet{
-					Set: _NS(
-						_P("bool"),
-					),
-					APIVersion: "v2",
 				},
 			},
 		},
@@ -270,65 +188,6 @@ func TestUpdateLeaf(t *testing.T) {
 				},
 			},
 		},
-		"apply_update_apply_with_conflict_across_version": {
-			Ops: []Operation{
-				Apply{
-					Manager:    "default",
-					APIVersion: "v1",
-					Object: `
-						numeric: 1
-						string: "string"
-					`,
-				},
-				Update{
-					Manager:    "controller",
-					APIVersion: "v2",
-					Object: `
-						numeric: 1
-						string: "controller string"
-						bool: true
-					`,
-				},
-				Apply{
-					Manager:    "default",
-					APIVersion: "v1",
-					Object: `
-						numeric: 2
-						string: "user string"
-					`,
-					Conflicts: merge.Conflicts{
-						merge.Conflict{Manager: "controller", Path: _P("string")},
-					},
-				},
-				ForceApply{
-					Manager:    "default",
-					APIVersion: "v1",
-					Object: `
-						numeric: 2
-						string: "user string"
-					`,
-				},
-			},
-			Object: `
-				numeric: 2
-				string: "user string"
-				bool: true
-			`,
-			Managed: fieldpath.ManagedFields{
-				"default": &fieldpath.VersionedSet{
-					Set: _NS(
-						_P("numeric"), _P("string"),
-					),
-					APIVersion: "v1",
-				},
-				"controller": &fieldpath.VersionedSet{
-					Set: _NS(
-						_P("bool"),
-					),
-					APIVersion: "v2",
-				},
-			},
-		},
 		"apply_twice_dangling": {
 			Ops: []Operation{
 				Apply{
@@ -359,39 +218,6 @@ func TestUpdateLeaf(t *testing.T) {
 						_P("string"),
 					),
 					APIVersion: "v1",
-				},
-			},
-		},
-		"apply_twice_dangling_different_version": {
-			Ops: []Operation{
-				Apply{
-					Manager:    "default",
-					APIVersion: "v1",
-					Object: `
-						numeric: 1
-						string: "string"
-						bool: false
-					`,
-				},
-				Apply{
-					Manager:    "default",
-					APIVersion: "v2",
-					Object: `
-						string: "new string"
-					`,
-				},
-			},
-			Object: `
-				numeric: 1
-				string: "new string"
-				bool: false
-			`,
-			Managed: fieldpath.ManagedFields{
-				"default": &fieldpath.VersionedSet{
-					Set: _NS(
-						_P("string"),
-					),
-					APIVersion: "v2",
 				},
 			},
 		},

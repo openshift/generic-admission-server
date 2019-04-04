@@ -831,11 +831,6 @@ func (in *Preconditions) DeepCopyInto(out *Preconditions) {
 		*out = new(types.UID)
 		**out = **in
 	}
-	if in.ResourceVersion != nil {
-		in, out := &in.ResourceVersion, &out.ResourceVersion
-		*out = new(string)
-		**out = **in
-	}
 	return
 }
 

@@ -166,8 +166,8 @@ var fieldsetCases = []fieldsetTestCase{{
 		{`{"arbitraryWavelengthColor":{"IR":255}}`, _NS(_P("arbitraryWavelengthColor"))},
 		{`{"args":[]}`, _NS(_P("args"))},
 		{`{"args":null}`, _NS(_P("args"))},
-		{`{"args":[null]}`,_NS(_P("args"))},
-		{`{"args":[{"key":"a","value":"b"},{"key":"c","value":"d"}]}`,_NS(_P("args"))},
+		{`{"args":[null]}`, _NS(_P("args"))},
+		{`{"args":[{"key":"a","value":"b"},{"key":"c","value":"d"}]}`, _NS(_P("args"))},
 	},
 }, {
 	name:         "associative list",
@@ -221,15 +221,11 @@ var fieldsetCases = []fieldsetTestCase{{
 	pairs: []objSetPair{
 		{`{"list":[]}`, _NS()},
 		{`{"list":[{"key":"a","id":1,"value":{"a":"a"}}]}`, _NS(
-			_P("list", _KBF("key", _SV("a"), "id", _IV(1))),
 			_P("list", _KBF("key", _SV("a"), "id", _IV(1)), "key"),
 			_P("list", _KBF("key", _SV("a"), "id", _IV(1)), "id"),
 			_P("list", _KBF("key", _SV("a"), "id", _IV(1)), "value", "a"),
 		)},
 		{`{"list":[{"key":"a","id":1},{"key":"a","id":2},{"key":"b","id":1}]}`, _NS(
-			_P("list", _KBF("key", _SV("a"), "id", _IV(1))),
-			_P("list", _KBF("key", _SV("a"), "id", _IV(2))),
-			_P("list", _KBF("key", _SV("b"), "id", _IV(1))),
 			_P("list", _KBF("key", _SV("a"), "id", _IV(1)), "key"),
 			_P("list", _KBF("key", _SV("a"), "id", _IV(1)), "id"),
 			_P("list", _KBF("key", _SV("a"), "id", _IV(2)), "key"),

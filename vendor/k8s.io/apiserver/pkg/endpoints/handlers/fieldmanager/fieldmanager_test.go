@@ -18,11 +18,9 @@ package fieldmanager_test
 
 import (
 	"errors"
-	"net/http"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -74,7 +72,7 @@ func TestApplyStripsFields(t *testing.T) {
 	obj := &corev1.Pod{}
 
 	newObj, err := f.Apply(obj, []byte(`{
-		"apiVersion": "apps/v1",
+		"apiVersion": "v1",
 		"kind": "Deployment",
 		"metadata": {
 			"name": "b",
@@ -87,7 +85,7 @@ func TestApplyStripsFields(t *testing.T) {
 			"managedFields": [{
 					"manager": "apply",
 					"operation": "Apply",
-					"apiVersion": "apps/v1",
+					"apiVersion": "v1",
 					"fields": {
 						"f:metadata": {
 							"f:labels": {
@@ -98,7 +96,7 @@ func TestApplyStripsFields(t *testing.T) {
 				}],
 			"resourceVersion": "b"
 		}
-	}`), "fieldmanager_test", false)
+	}`), false)
 	if err != nil {
 		t.Fatalf("failed to apply object: %v", err)
 	}
@@ -112,54 +110,20 @@ func TestApplyStripsFields(t *testing.T) {
 		t.Fatalf("fields did not get stripped on apply: %v", m)
 	}
 }
-
-func TestVersionCheck(t *testing.T) {
-	f := NewTestFieldManager(t)
-
-	obj := &corev1.Pod{}
-
-	// patch has 'apiVersion: apps/v1' and live version is apps/v1 -> no errors
-	_, err := f.Apply(obj, []byte(`{
-		"apiVersion": "apps/v1",
-		"kind": "Deployment",
-	}`), "fieldmanager_test", false)
-	if err != nil {
-		t.Fatalf("failed to apply object: %v", err)
-	}
-
-	// patch has 'apiVersion: apps/v2' but live version is apps/v1 -> error
-	_, err = f.Apply(obj, []byte(`{
-		"apiVersion": "apps/v2",
-		"kind": "Deployment",
-	}`), "fieldmanager_test", false)
-	if err == nil {
-		t.Fatalf("expected an error from mismatched patch and live versions")
-	}
-	switch typ := err.(type) {
-	default:
-		t.Fatalf("expected error to be of type %T was %T", apierrors.StatusError{}, typ)
-	case apierrors.APIStatus:
-		if typ.Status().Code != http.StatusBadRequest {
-			t.Fatalf("expected status code to be %d but was %d",
-				http.StatusBadRequest, typ.Status().Code)
-		}
-	}
-}
-
 func TestApplyDoesNotStripLabels(t *testing.T) {
 	f := NewTestFieldManager(t)
 
 	obj := &corev1.Pod{}
 
 	newObj, err := f.Apply(obj, []byte(`{
-		"apiVersion": "apps/v1",
+		"apiVersion": "v1",
 		"kind": "Pod",
 		"metadata": {
 			"labels": {
 				"a": "b"
 			},
 		}
-	}`), "fieldmanager_test", false)
+	}`), false)
 	if err != nil {
 		t.Fatalf("failed to apply object: %v", err)
 	}

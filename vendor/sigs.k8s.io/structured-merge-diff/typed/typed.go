@@ -31,7 +31,7 @@ type TypedValue interface {
 	AsValue() *value.Value
 	// Validate returns an error with a list of every spec violation.
 	Validate() error
-	// ToFieldSet creates a set containing every leaf field and item mentioned, or
+	// ToFieldSet creates a set containing every leaf field mentioned, or
 	// validation errors, if any were encountered.
 	ToFieldSet() (*fieldpath.Set, error)
 	// Merge returns the result of merging tv and pso ("partially specified
@@ -109,7 +109,6 @@ func (tv typedValue) ToFieldSet() (*fieldpath.Set, error) {
 	s := fieldpath.NewSet()
 	w := tv.walker()
 	w.leafFieldCallback = func(p fieldpath.Path) { s.Insert(p) }
-	w.nodeFieldCallback = func(p fieldpath.Path) { s.Insert(p) }
 	if errs := w.validate(); len(errs) != 0 {
 		return nil, errs
 	}
@@ -164,10 +163,8 @@ func (tv typedValue) Compare(rhs TypedValue) (c *Comparison, err error) {
 
 // RemoveItems removes each provided list or map item from the value.
 func (tv typedValue) RemoveItems(items *fieldpath.Set) TypedValue {
-	copied := tv
-	copied.value, _ = value.FromUnstructured(tv.value.ToUnstructured(true))
-	removeItemsWithSchema(&copied.value, items, copied.schema, copied.typeRef)
-	return copied
+	removeItemsWithSchema(&tv.value, items, tv.schema, tv.typeRef)
+	return tv
 }
 
 func merge(lhs, rhs typedValue, rule, postRule mergeRule) (TypedValue, error) {
