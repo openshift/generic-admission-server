@@ -19,6 +19,48 @@ func (a *admissionHook) Validate(admissionSpec *admissionv1beta1.AdmissionReques
 func (a *admissionHook) Initialize(kubeClientConfig *rest.Config, stopCh <-chan struct{}) error {}
 ```
 
+
+## Architecture
+
+This library helps you to write secure [Admission Webhooks](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/).
+It uses TLS authentication functions which are built into the [Kubernetes aggregated API server](https://github.com/kubernetes/apiserver) library,
+which means that your webhooks are secure by default.
+
+A `generic-admission-server` based webhook server is first deployed as an [aggregated API server](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/apiserver-aggregation/).
+This provides one or more new Kubernetes API endpoints which are served by the Kubernetes API server its self.
+E.g. `/apis/admission.core.example.com/v1/flunders`
+
+You then [configure admission webhooks](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#configure-admission-webhooks-on-the-fly) which target this new endpoint on the Kubernetes API server.
+E.g.
+
+```
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: example-webhook
+webhooks:
+  - name: admission.core.example.com
+    rules:
+      - apiGroups:
+          - "core.example.com"
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - flunders
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        name: kubernetes
+        namespace: default
+        path: /apis/admission.core.example.com/v1/flunders
+      caBundle: $CA_BUNDLE
+```
+
+In this way, the [MutatingAdmissionWebhook](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#mutatingadmissionwebhook) or [ValidatingAdmissionWebhook](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#validatingadmissionwebhook) admission controllers, running in the Kubernetes API server process, are looping back to the main Kubernetes API service.
+
 ## Examples of Projects that use Openshift Generic Admission Server
 
 Here are a selection of webhooks which use the Openshift Generic Admission Server:
