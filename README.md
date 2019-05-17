@@ -1,7 +1,6 @@
 # generic-admission-server
 A library for writing admission webhooks based on k8s.io/apiserver
 
-
 ```go
 import "github.com/openshift/generic-admission-server/pkg/cmd"
 
@@ -18,7 +17,6 @@ func (a *admissionHook) Validate(admissionSpec *admissionv1beta1.AdmissionReques
 // any special initialization goes here
 func (a *admissionHook) Initialize(kubeClientConfig *rest.Config, stopCh <-chan struct{}) error {}
 ```
-
 
 ## Architecture
 
@@ -61,7 +59,6 @@ webhooks:
 
 In this way, the [MutatingAdmissionWebhook](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#mutatingadmissionwebhook) or [ValidatingAdmissionWebhook](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#validatingadmissionwebhook) admission controllers, running in the Kubernetes API server process, are looping back to the main Kubernetes API service.
 
-
 ## FAQ
 
 ### Why can't I write a simple HTTP webhook server?
@@ -72,6 +69,14 @@ so it is vital that the API server can verify that it is connecting to an authen
 And it is also vital that a webhook server can verify that it is receiving requests from an authentic Kubernetes API server.
 Kubernetes will eventually deprecate and remove all unencrypted HTTP APIs.
 
+### OK, but how am I supposed to manage all the TLS certificates for my web hooks?
+
+For testing purposes, you can create a private key and a self-signed certificate using `openssl` or `cfssl`.
+
+In production, you must implement a process for rotating the certificates.
+For example:
+* [OpenShift Service CA Operator](https://github.com/openshift/service-ca-operator): Controller to mint and manage serving certificates for Kubernetes services.
+* [cert-manager](https://docs.cert-manager.io/en/latest/tasks/issuers/setup-ca.html): A controller for automatically provisioning and managing TLS certificates in Kubernetes.
 
 ## Examples of Projects that use Openshift Generic Admission Server
 
