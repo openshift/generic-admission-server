@@ -61,6 +61,18 @@ webhooks:
 
 In this way, the [MutatingAdmissionWebhook](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#mutatingadmissionwebhook) or [ValidatingAdmissionWebhook](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#validatingadmissionwebhook) admission controllers, running in the Kubernetes API server process, are looping back to the main Kubernetes API service.
 
+
+## FAQ
+
+### Why can't I write a simple HTTP webhook server?
+
+Admission webhooks have tremendous power over what can and cannot be created in the API.
+They can see, validate, and in some cases mutate every object in the cluster,
+so it is vital that the API server can verify that it is connecting to an authentic webhook server.
+And it is also vital that a webhook server can verify that it is receiving requests from an authentic Kubernetes API server.
+Kubernetes will eventually deprecate and remove all unencrypted HTTP APIs.
+
+
 ## Examples of Projects that use Openshift Generic Admission Server
 
 Here are a selection of webhooks which use the Openshift Generic Admission Server:
