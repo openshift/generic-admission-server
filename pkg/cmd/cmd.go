@@ -20,8 +20,14 @@ import (
 type AdmissionHook apiserver.AdmissionHook
 type ValidatingAdmissionHook apiserver.ValidatingAdmissionHook
 type MutatingAdmissionHook apiserver.MutatingAdmissionHook
+type ConversionHook apiserver.ConversionHook
 
-func RunAdmissionServer(admissionHooks ...AdmissionHook) {
+type AdmissionServerOptions struct {
+	AdmissionHooks []AdmissionHook
+	ConversionHooks []ConversionHook
+}
+
+func RunAdmissionServerOptions(opts AdmissionServerOptions) {
 	logs.InitLogs()
 	defer logs.FlushLogs()
 
@@ -31,14 +37,30 @@ func RunAdmissionServer(admissionHooks ...AdmissionHook) {
 
 	stopCh := genericapiserver.SetupSignalHandler()
 
-	// done to avoid cannot use admissionHooks (type []AdmissionHook) as type []apiserver.AdmissionHook in argument to "github.com/openshift/kubernetes-namespace-reservation/pkg/genericadmissionserver/cmd/server".NewCommandStartAdmissionServer
-	var castSlice []apiserver.AdmissionHook
-	for i := range admissionHooks {
-		castSlice = append(castSlice, admissionHooks[i])
+	// done to avoid cannot use opts.AdmissionHooks (type []AdmissionHook) as type []apiserver.AdmissionHook in argument to "github.com/openshift/generic-admission-server/pkg/cmd/server".NewCommandStartAdmissionServer
+	var admissionHooks []apiserver.AdmissionHook
+	for i := range opts.AdmissionHooks {
+		admissionHooks = append(admissionHooks, opts.AdmissionHooks[i])
 	}
-	cmd := server.NewCommandStartAdmissionServer(os.Stdout, os.Stderr, stopCh, castSlice...)
+
+	// done to avoid cannot use opts.ConversionHooks (type []ConversionHook) as type []apiserver.ConversionHook in argument to "github.com/openshift/generic-admission-server/pkg/cmd/server".NewCommandStartAdmissionServer
+	var conversionHooks []apiserver.ConversionHook
+	for i := range opts.ConversionHooks {
+		conversionHooks = append(conversionHooks, opts.ConversionHooks[i])
+	}
+
+	cmd := server.NewCommandStartAdmissionServer(os.Stdout, os.Stderr, stopCh, admissionHooks, conversionHooks)
 	cmd.Flags().AddGoFlagSet(flag.CommandLine)
 	if err := cmd.Execute(); err != nil {
 		klog.Fatal(err)
 	}
+}
+
+// RunAdmissionServer runs a webhook apiserver using the given admission hooks.
+// If you want to also use conversion webhooks, use the
+// RunAdmissionServerOptions function instead.
+func RunAdmissionServer(admissionHooks ...AdmissionHook) {
+	RunAdmissionServerOptions(AdmissionServerOptions{
+		AdmissionHooks:  admissionHooks,
+	})
 }

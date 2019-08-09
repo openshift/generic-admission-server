@@ -20,12 +20,13 @@ type AdmissionServerOptions struct {
 	RecommendedOptions *genericoptions.RecommendedOptions
 
 	AdmissionHooks []apiserver.AdmissionHook
+	ConversionHooks []apiserver.ConversionHook
 
 	StdOut io.Writer
 	StdErr io.Writer
 }
 
-func NewAdmissionServerOptions(out, errOut io.Writer, admissionHooks ...apiserver.AdmissionHook) *AdmissionServerOptions {
+func NewAdmissionServerOptions(out, errOut io.Writer, admissionHooks []apiserver.AdmissionHook, conversionHooks []apiserver.ConversionHook) *AdmissionServerOptions {
 	o := &AdmissionServerOptions{
 		// TODO we will nil out the etcd storage options.  This requires a later level of k8s.io/apiserver
 		RecommendedOptions: genericoptions.NewRecommendedOptions(
@@ -35,6 +36,7 @@ func NewAdmissionServerOptions(out, errOut io.Writer, admissionHooks ...apiserve
 		),
 
 		AdmissionHooks: admissionHooks,
+		ConversionHooks: conversionHooks,
 
 		StdOut: out,
 		StdErr: errOut,
@@ -46,8 +48,8 @@ func NewAdmissionServerOptions(out, errOut io.Writer, admissionHooks ...apiserve
 }
 
 // NewCommandStartMaster provides a CLI handler for 'start master' command
-func NewCommandStartAdmissionServer(out, errOut io.Writer, stopCh <-chan struct{}, admissionHooks ...apiserver.AdmissionHook) *cobra.Command {
-	o := NewAdmissionServerOptions(out, errOut, admissionHooks...)
+func NewCommandStartAdmissionServer(out, errOut io.Writer, stopCh <-chan struct{}, admissionHooks []apiserver.AdmissionHook, conversionHooks []apiserver.ConversionHook)  *cobra.Command {
+	o := NewAdmissionServerOptions(out, errOut, admissionHooks, conversionHooks)
 
 	cmd := &cobra.Command{
 		Short: "Launch a namespace reservation API server",
@@ -95,6 +97,7 @@ func (o AdmissionServerOptions) Config() (*apiserver.Config, error) {
 		GenericConfig: serverConfig,
 		ExtraConfig: apiserver.ExtraConfig{
 			AdmissionHooks: o.AdmissionHooks,
+			ConversionHooks: o.ConversionHooks,
 		},
 	}
 	return config, nil

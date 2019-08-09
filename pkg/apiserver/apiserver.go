@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	apiextensions1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -15,6 +16,7 @@ import (
 	restclient "k8s.io/client-go/rest"
 
 	"github.com/openshift/generic-admission-server/pkg/registry/admissionreview"
+	"github.com/openshift/generic-admission-server/pkg/registry/conversionreview"
 )
 
 var (
@@ -53,8 +55,25 @@ type MutatingAdmissionHook interface {
 	Admit(admissionSpec *admissionv1beta1.AdmissionRequest) *admissionv1beta1.AdmissionResponse
 }
 
+type ConversionHook interface {
+	// Initialize is called as a post-start hook
+	Initialize(kubeClientConfig *restclient.Config, stopCh <-chan struct{}) error
+
+	// ConvertingResource is the resource to use for hosting your conversion webhook.
+	ConvertingResource() (plural schema.GroupVersionResource, singular string)
+
+	// Convert is called to process a conversion request. The returned ConversionResponse must:
+	// - list the same output items (ConvertedObjects) in the requested version
+	// - preserve the order of the converted objects
+	// - set the apiVersion of the ConvertedObjects appropriately
+	// The Convert function is only allowed to manipulate the 'labels' and 'annotations'
+	// metadata fields on the converted objects. No other changes should be made.
+	Convert(conversionSpec *apiextensions1beta1.ConversionRequest) *apiextensions1beta1.ConversionResponse
+}
+
 func init() {
 	admissionv1beta1.AddToScheme(Scheme)
+	apiextensions1beta1.AddToScheme(Scheme)
 
 	// we need to add the options to empty v1
 	// TODO fix the server code to avoid this
@@ -78,6 +97,7 @@ type Config struct {
 
 type ExtraConfig struct {
 	AdmissionHooks []AdmissionHook
+	ConversionHooks []ConversionHook
 }
 
 // AdmissionServer contains state for a Kubernetes cluster master/api server.
@@ -126,7 +146,8 @@ func (c completedConfig) New() (*AdmissionServer, error) {
 		return nil, err
 	}
 
-	for _, versionMap := range admissionHooksByGroupThenVersion(c.ExtraConfig.AdmissionHooks...) {
+	apiGroupInfoMap := make(map[string]genericapiserver.APIGroupInfo)
+	for group, versionMap := range admissionHooksByGroupThenVersion(c.ExtraConfig.AdmissionHooks...) {
 		// TODO we're going to need a later k8s.io/apiserver so that we can get discovery to list a different group version for
 		// our endpoint which we'll use to back some custom storage which will consume the AdmissionReview type and give back the correct response
 		apiGroupInfo := genericapiserver.APIGroupInfo{
@@ -136,6 +157,9 @@ func (c completedConfig) New() (*AdmissionServer, error) {
 			Scheme:                 Scheme,
 			ParameterCodec:         metav1.ParameterCodec,
 			NegotiatedSerializer:   Codecs,
+		}
+		if existingInfo, ok := apiGroupInfoMap[group]; ok {
+			apiGroupInfo = existingInfo
 		}
 
 		for _, admissionHooks := range versionMap {
@@ -157,6 +181,47 @@ func (c completedConfig) New() (*AdmissionServer, error) {
 			}
 		}
 
+		apiGroupInfoMap[group] = apiGroupInfo
+	}
+
+	for group, versionMap := range conversionHooksByGroupThenVersion(c.ExtraConfig.ConversionHooks...) {
+		// TODO we're going to need a later k8s.io/apiserver so that we can get discovery to list a different group version for
+		// our endpoint which we'll use to back some custom storage which will consume the AdmissionReview type and give back the correct response
+		apiGroupInfo := genericapiserver.APIGroupInfo{
+			VersionedResourcesStorageMap: map[string]map[string]rest.Storage{},
+			// TODO unhardcode this.  It was hardcoded before, but we need to re-evaluate
+			OptionsExternalVersion: &schema.GroupVersion{Version: "v1"},
+			Scheme:                 Scheme,
+			ParameterCodec:         metav1.ParameterCodec,
+			NegotiatedSerializer:   Codecs,
+		}
+		if existingInfo, ok := apiGroupInfoMap[group]; ok {
+			apiGroupInfo = existingInfo
+		}
+
+		for _, conversionHooks := range versionMap {
+			for i := range conversionHooks {
+				conversionHook := conversionHooks[i]
+				conversionResource, _ := conversionHook.Resource()
+				conversionVersion := conversionResource.GroupVersion()
+
+				// just overwrite the groupversion with a random one.  We don't really care or know.
+				apiGroupInfo.PrioritizedVersions = appendUniqueGroupVersion(apiGroupInfo.PrioritizedVersions, conversionVersion)
+
+				conversionReview := conversionreview.NewREST(conversionHook.Conversion)
+				v1alpha1storage, ok := apiGroupInfo.VersionedResourcesStorageMap[conversionVersion.Version]
+				if !ok {
+					v1alpha1storage = map[string]rest.Storage{}
+				}
+				v1alpha1storage[conversionResource.Resource] = conversionReview
+				apiGroupInfo.VersionedResourcesStorageMap[conversionVersion.Version] = v1alpha1storage
+			}
+		}
+
+		apiGroupInfoMap[group] = apiGroupInfo
+	}
+
+	for _, apiGroupInfo := range apiGroupInfoMap {
 		if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
 			return nil, err
 		}
@@ -171,6 +236,19 @@ func (c completedConfig) New() (*AdmissionServer, error) {
 		s.GenericAPIServer.AddPostStartHookOrDie(postStartName,
 			func(context genericapiserver.PostStartHookContext) error {
 				return admissionHook.Initialize(inClusterConfig, context.StopCh)
+			},
+		)
+	}
+
+	for i := range c.ExtraConfig.ConversionHooks {
+		conversionHook := c.ExtraConfig.ConversionHooks[i]
+		postStartName := postStartHookName(conversionHook)
+		if len(postStartName) == 0 {
+			continue
+		}
+		s.GenericAPIServer.AddPostStartHookOrDie(postStartName,
+			func(context genericapiserver.PostStartHookContext) error {
+				return conversionHook.Initialize(inClusterConfig, context.StopCh)
 			},
 		)
 	}
@@ -236,6 +314,22 @@ func admissionHooksByGroupThenVersion(admissionHooks ...AdmissionHook) map[strin
 	return ret
 }
 
+func conversionHooksByGroupThenVersion(conversionHooks ...ConversionHook) map[string]map[string][]convertingHookWrapper {
+	ret := map[string]map[string][]convertingHookWrapper{}
+
+	for _, conversionHook := range conversionHooks {
+		gvr, _ := conversionHook.ConvertingResource()
+		group, ok := ret[gvr.Group]
+		if !ok {
+			group = map[string][]convertingHookWrapper{}
+			ret[gvr.Group] = group
+		}
+		group[gvr.Version] = append(group[gvr.Version], convertingHookWrapper{conversionHook})
+	}
+
+	return ret
+}
+
 // admissionHookWrapper wraps either a validating or mutating admission hooks, calling the respective resource and admission method.
 type admissionHookWrapper interface {
 	Resource() (plural schema.GroupVersionResource, singular string)
@@ -264,4 +358,16 @@ func (h validatingAdmissionHookWrapper) Resource() (plural schema.GroupVersionRe
 
 func (h validatingAdmissionHookWrapper) Admission(admissionSpec *admissionv1beta1.AdmissionRequest) *admissionv1beta1.AdmissionResponse {
 	return h.hook.Validate(admissionSpec)
+}
+
+type convertingHookWrapper struct {
+	hook ConversionHook
+}
+
+func (h convertingHookWrapper) Resource() (plural schema.GroupVersionResource, singular string) {
+	return h.hook.ConvertingResource()
+}
+
+func (h convertingHookWrapper) Conversion(conversionSpec *apiextensions1beta1.ConversionRequest) *apiextensions1beta1.ConversionResponse {
+	return h.hook.Convert(conversionSpec)
 }
