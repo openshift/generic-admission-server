@@ -1,3 +1,6 @@
 #!/bin/bash -e
 
-glide update --strip-vendor
+export GO111MODULE=on
+export GOPROXY=https://proxy.golang.org
+
+go mod tidy
