@@ -3,14 +3,15 @@ module github.com/openshift/generic-admission-server
 go 1.12
 
 require (
-	github.com/evanphx/json-patch v4.2.0+incompatible // indirect
-	github.com/json-iterator/go v1.1.7 // indirect
-	github.com/spf13/cobra v0.0.4
-	golang.org/x/net v0.0.0-20190311183353-d8887717615a // indirect
-	k8s.io/api v0.0.0-20190805141119-fdd30b57c827
-	k8s.io/apimachinery v0.0.0-20190612205821-1799e75a0719
-	k8s.io/apiserver v0.0.0-20190805142138-368b2058237c
-	k8s.io/client-go v0.0.0-20190805141520-2fe0317bcee0
-	k8s.io/component-base v0.0.0-20190805141645-3a5e5ac800ae
-	k8s.io/klog v0.3.1
+	github.com/Azure/go-autorest v11.1.2+incompatible // indirect
+	github.com/ghodss/yaml v0.0.0-20180820084758-c7ce16629ff4 // indirect
+	github.com/natefinch/lumberjack v2.0.0+incompatible // indirect
+	github.com/spf13/cobra v0.0.5
+	gopkg.in/yaml.v1 v1.0.0-20140924161607-9f9df34309c0 // indirect
+	k8s.io/api v0.0.0-20190918155943-95b840bb6a1f
+	k8s.io/apimachinery v0.0.0-20190913080033-27d36303b655
+	k8s.io/apiserver v0.0.0-20190918160949-bfa5e2e684ad
+	k8s.io/client-go v0.0.0-20190918160344-1fbdaa4c8d90
+	k8s.io/component-base v0.0.0-20190918160511-547f6c5d7090
+	k8s.io/klog v0.4.0
 )
