@@ -41,6 +41,13 @@ func NewAdmissionServerOptions(out, errOut io.Writer, admissionHooks ...apiserve
 	o.RecommendedOptions.Etcd = nil
 	o.RecommendedOptions.Admission = nil
 
+	// we can also optimize the authz options.  We know that system:masters should always be authorized for actions and the
+	// delegating authorizer now allows this.
+	o.RecommendedOptions.Authorization = o.RecommendedOptions.Authorization.
+		WithAlwaysAllowPaths("/healthz", "/readyz", "/livez"). // this allows the kubelet to always get health and readiness without causing an access check
+		WithAlwaysAllowGroups("system:masters") // in a kube cluster, system:masters can take any action, so there is no need to ask for an authz check
+
+
 	return o
 }
 
