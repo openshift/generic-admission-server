@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: openshift-dump-request-admission
+  name: dump-request-admission
+  labels:
+    app: dump-request-admission
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: dump-request-admission
+  template:
+    metadata:
+      name: dump-request-admission
+      labels:
+        app: dump-request-admission
+    spec:
+      serviceAccountName: default
+      containers:
+        - name: dump-request-admission
+          image: docker.io/deads2k/dump-request-admission-webhook:v002
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8443
+              name: metrics
+              protocol: TCP
+          command: ["dump-request-admission-webhook"]
+          args:
+            - "--secure-port=8443"
+            - "--tls-cert-file=/var/run/secrets/serving-cert/tls.crt"
+            - "--tls-private-key-file=/var/run/secrets/serving-cert/tls.key"
+          resources:
+            requests:
+              memory: 50Mi
+              cpu: 10m
+          volumeMounts:
+            - mountPath: /var/run/secrets/serving-cert
+              name: serving-cert
+          terminationMessagePolicy: FallbackToLogsOnError
+      volumes:
+        - name: serving-cert
+          secret:
+            secretName: serving-cert

@@ -1,0 +1,15 @@
+apiVersion: apiregistration.k8s.io/v1
+kind: APIService
+metadata:
+  annotations:
+    service.alpha.openshift.io/inject-cabundle: "true"
+  name: v1.samples.admission.openshift.io
+spec:
+  group: samples.admission.openshift.io
+  groupPriorityMinimum: 9900
+  service:
+    name: dump-request-admission
+    namespace: openshift-dump-request-admission
+    port: 443
+  version: v1
+  versionPriority: 15

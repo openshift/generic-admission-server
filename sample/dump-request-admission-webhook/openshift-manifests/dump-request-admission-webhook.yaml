@@ -1,0 +1,27 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: dump-request
+  annotations:
+    "service.beta.openshift.io/inject-cabundle": "true"
+webhooks:
+  - name: samples.admission.openshift.io
+    rules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - "*"
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - nodes
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions:
+    - v1beta1
+    clientConfig:
+      service:
+        name: kubernetes
+        namespace: default
+        path: /apis/samples.admission.openshift.io/v1/dumprequests
