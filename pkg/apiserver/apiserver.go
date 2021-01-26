@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	admissionv1 "k8s.io/api/admission/v1"
+
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -55,6 +57,7 @@ type MutatingAdmissionHook interface {
 
 func init() {
 	admissionv1beta1.AddToScheme(Scheme)
+	admissionv1.AddToScheme(Scheme)
 
 	// we need to add the options to empty v1
 	// TODO fix the server code to avoid this
