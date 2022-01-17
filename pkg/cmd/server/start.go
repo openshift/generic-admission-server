@@ -11,8 +11,10 @@ import (
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
+	"k8s.io/client-go/rest"
 
 	"github.com/openshift/generic-admission-server/pkg/apiserver"
+	"github.com/openshift/library-go/pkg/config/client"
 )
 
 const defaultEtcdPathPrefix = "/registry/online.openshift.io"
@@ -97,11 +99,18 @@ func (o AdmissionServerOptions) Config() (*apiserver.Config, error) {
 		return nil, err
 	}
 
+	kubeconfigFile := o.RecommendedOptions.CoreAPI.CoreAPIKubeconfigPath
+	restConfig, err := getClientConfig(kubeconfigFile)
+	if err != nil {
+		return nil, err
+	}
+
 	config := &apiserver.Config{
 		GenericConfig: serverConfig,
 		ExtraConfig: apiserver.ExtraConfig{
 			AdmissionHooks: o.AdmissionHooks,
 		},
+		RestConfig: restConfig,
 	}
 	return config, nil
 }
@@ -117,4 +126,17 @@ func (o AdmissionServerOptions) RunAdmissionServer(stopCh <-chan struct{}) error
 		return err
 	}
 	return server.GenericAPIServer.PrepareRun().Run(stopCh)
+}
+
+func getClientConfig(kubeconfigFile string) (*rest.Config, error) {
+	if len(kubeconfigFile) > 0 {
+		return client.GetClientConfig(kubeconfigFile, nil)
+	}
+
+	clientConfig, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	return clientConfig, nil
 }
