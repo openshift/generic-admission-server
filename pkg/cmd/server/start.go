@@ -12,6 +12,7 @@ import (
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -75,6 +76,10 @@ func NewCommandStartAdmissionServer(out, errOut io.Writer, stopCh <-chan struct{
 
 	flags := cmd.Flags()
 	o.RecommendedOptions.AddFlags(flags)
+
+	featureGate := utilfeature.DefaultMutableFeatureGate
+	featureGate.AddFlag(flags)
+	o.RecommendedOptions.FeatureGate = featureGate
 
 	return cmd
 }
