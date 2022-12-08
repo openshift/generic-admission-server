@@ -30,6 +30,10 @@ func (r *V1REST) New() runtime.Object {
 	return &admissionv1.AdmissionReview{}
 }
 
+func (r *V1REST) Destroy() {
+
+}
+
 func (r *V1REST) GroupVersionKind(containingGV schema.GroupVersion) schema.GroupVersionKind {
 	return admissionv1.SchemeGroupVersion.WithKind("AdmissionReview")
 }
