@@ -16,9 +16,9 @@ type V1REST struct {
 	hookFn AdmissionV1HookFunc
 }
 
-var _ rest.Creater = &REST{}
-var _ rest.Scoper = &REST{}
-var _ rest.GroupVersionKindProvider = &REST{}
+var _ rest.Creater = &V1REST{}
+var _ rest.Scoper = &V1REST{}
+var _ rest.GroupVersionKindProvider = &V1REST{}
 
 func NewV1REST(hookFn AdmissionV1HookFunc) *V1REST {
 	return &V1REST{
