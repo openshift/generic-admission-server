@@ -7,13 +7,16 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/openshift/generic-admission-server/pkg/apiserver"
 	admissionv1 "k8s.io/api/admission/v1"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	"k8s.io/apiserver/pkg/endpoints/openapi"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+
+	"github.com/openshift/generic-admission-server/pkg/apiserver"
+	"github.com/openshift/generic-admission-server/pkg/registry/admissionreview/generated"
 )
 
 const defaultEtcdPathPrefix = "/registry/online.openshift.io"
@@ -94,6 +97,7 @@ func (o AdmissionServerOptions) Config() (*apiserver.Config, error) {
 	}
 
 	serverConfig := genericapiserver.NewRecommendedConfig(apiserver.Codecs)
+	serverConfig.OpenAPIV3Config = genericapiserver.DefaultOpenAPIV3Config(generated.GetOpenAPIDefinitions, openapi.NewDefinitionNamer(apiserver.Scheme))
 	if err := o.RecommendedOptions.ApplyTo(serverConfig); err != nil {
 		return nil, err
 	}
