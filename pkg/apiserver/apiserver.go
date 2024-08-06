@@ -2,7 +2,6 @@ package apiserver
 
 import (
 	"fmt"
-	"k8s.io/apiserver/pkg/util/version"
 	"strings"
 
 	admissionv1 "k8s.io/api/admission/v1"
@@ -13,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
+	"k8s.io/apiserver/pkg/util/version"
 	restclient "k8s.io/client-go/rest"
 
 	"github.com/openshift/generic-admission-server/pkg/registry/admissionreview"
