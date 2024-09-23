@@ -1,3 +1,5 @@
+dist: jammy # default xenial broken
+
 language: go
 
 go:
