@@ -3,7 +3,7 @@ dist: jammy # default xenial broken
 language: go
 
 go:
-  - "1.22.x"
+  - "1.23.x"
 
 script:
   - make build
