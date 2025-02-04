@@ -1,14 +1,15 @@
 all: build
 .PHONY: all
 
-build:
-	GO111MODULE=on GOPROXY=https://proxy.golang.org go build -o _output/bin/generic-admission-server github.com/openshift/generic-admission-server/pkg/cmd
-.PHONY: build
+# Include the library makefile
+include $(addprefix ./vendor/github.com/openshift/build-machinery-go/make/, \
+	golang.mk \
+	targets/openshift/deps-gomod.mk \
+)
 
-clean:
-	rm -rf _output
-.PHONY: clean
+# Run core verification and all self contained tests.
+check: | verify test-unit
+.PHONY: check
 
-update-deps:
-	hack/update-deps.sh
-.PHONY: generate
+# What should be unit-tested
+GO_TEST_PACKAGES :=./pkg/...
