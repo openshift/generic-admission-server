@@ -14,11 +14,14 @@ import (
 	admissionv1 "k8s.io/api/admission/v1"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
+	openapinamer "k8s.io/apiserver/pkg/endpoints/openapi"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/client-go/rest"
 	restclient "k8s.io/client-go/rest"
+	kubeopenapi "k8s.io/kube-openapi/pkg/common"
 )
 
 const (
@@ -223,6 +226,10 @@ func TestV1Webhook(t *testing.T) {
 
 func newTestServer(t *testing.T, webhook AdmissionHook) *httptest.Server {
 	serverConfig := genericapiserver.NewRecommendedConfig(Codecs)
+	serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(testGetOpenAPIDefinitions, openapinamer.NewDefinitionNamer(runtime.NewScheme()))
+	serverConfig.OpenAPIConfig.Info.Version = "unversioned"
+	serverConfig.OpenAPIV3Config = genericapiserver.DefaultOpenAPIV3Config(testGetOpenAPIDefinitions, openapinamer.NewDefinitionNamer(runtime.NewScheme()))
+	serverConfig.OpenAPIV3Config.Info.Version = "unversioned"
 	serverConfig.ExternalAddress = "192.168.10.4:443"
 	serverConfig.PublicAddress = net.ParseIP("192.168.10.4")
 	serverConfig.LegacyAPIGroupPrefixes = sets.NewString("/api")
@@ -242,4 +249,11 @@ func newTestServer(t *testing.T, webhook AdmissionHook) *httptest.Server {
 	}
 	server := httptest.NewServer(addmissionServer.GenericAPIServer.Handler)
 	return server
+}
+
+func testGetOpenAPIDefinitions(_ kubeopenapi.ReferenceCallback) map[string]kubeopenapi.OpenAPIDefinition {
+	return map[string]kubeopenapi.OpenAPIDefinition{
+		"k8s.io/api/admission/v1.AdmissionReview":      {},
+		"k8s.io/api/admission/v1beta1.AdmissionReview": {},
+	}
 }
