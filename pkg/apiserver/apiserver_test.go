@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"testing"
 
@@ -132,7 +132,7 @@ func TestV1Beta1Webhook(t *testing.T) {
 				t.Errorf("unexpected error when calling webhook, but got %v", err)
 			}
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				t.Errorf("unexpected error reading body at url %q: %v", url, err)
 			}
@@ -203,7 +203,7 @@ func TestV1Webhook(t *testing.T) {
 				t.Errorf("unexpected error when calling webhook, but got %v", err)
 			}
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				t.Errorf("unexpected error reading body at url %q: %v", url, err)
 			}
